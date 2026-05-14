@@ -4,7 +4,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { Mail, MapPin, Phone } from "lucide-react";
 import { FaFacebookF, FaInstagram, FaYoutube } from "react-icons/fa6";
-import { useTheme } from "../theme/ThemeProvider";
 
 const socialLinks = [
   { label: "Instagram", href: "#", icon: FaInstagram },
@@ -41,9 +40,6 @@ const contactLinks = [
 ];
 
 export default function Footer() {
-  const { theme } = useTheme();
-  const logoSrc = theme === "dark" ? "/logoDark2.png" : "/logoLight.png";
-
   return (
     <footer className="relative overflow-hidden border-t border-border/70 bg-background">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(63,132,184,0.08),_transparent_34%),radial-gradient(circle_at_bottom_right,_rgba(56,189,248,0.06),_transparent_30%)]" />
@@ -57,10 +53,18 @@ export default function Footer() {
               className="relative block h-[68px] w-[176px] sm:h-[72px] sm:w-[190px]"
             >
               <Image
-                src={logoSrc}
+                src="/logoLight.png"
                 alt="Dr. Bachir Abiad"
                 fill
-                className="object-contain object-left"
+                className="theme-logo-light object-contain object-left"
+                priority
+              />
+              <Image
+                src="/logoDark2.png"
+                alt=""
+                fill
+                aria-hidden="true"
+                className="theme-logo-dark object-contain object-left"
                 priority
               />
             </Link>
