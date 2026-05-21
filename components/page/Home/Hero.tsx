@@ -1,49 +1,66 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import gsap from "gsap";
 import Image from "next/image";
 import Link from "next/link";
-import {
-  LuArrowRight,
-  LuClock3,
-  LuShieldCheck,
-  LuSparkles,
-} from "react-icons/lu";
+import { LuArrowRight, LuClock3, LuShieldCheck, LuSparkles } from "react-icons/lu";
+import { useGetClinicSettingsQuery } from "@/lib/redux/api";
 
-const slides = [
-  {
-    eyebrow: "Anterior segment & refractive surgeon",
-    title: "Advanced eye surgery led by Dr. Bachir Abiad.",
-    text: "Chief of Ophthalmology at Clemenceau Medical Center, specializing in cornea, cataract, anterior segment reconstruction, and refractive surgery.",
-    image: "/dummy/hero2.jpg",
-    highlight: "Cornea, cataract & refractive expertise",
-  },
-  {
-    eyebrow: "US fellowship-trained ophthalmologist",
-    title: "Precision vision care with international expertise.",
-    text: "Trained at AUB and UT Southwestern Medical Center in the USA, with clinical experience across Lebanon, the UAE, and Bahrain.",
-    image: "/dummy/hero1.jpg",
-    highlight: "US-trained surgical specialist",
-  },
-];
+type HeroSectionRecord = {
+  _id: string;
+  badge?: string;
+  title: string;
+  subtitle: string;
+  ButtonLink?: {
+    text?: string;
+  };
+  stats?: Array<{ value?: string; label?: string }>;
+  image?: string;
+  floatingCards?: Array<{ title?: string; subtitle?: string }>;
+};
 
-const quickStats = [
-  { label: "Hospitals in Lebanon", value: "5+" },
-  { label: "Publications", value: "10+" },
-  { label: "International practice", value: "3 Countries" },
-];
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5000/api/v1";
+
+function resolveImageUrl(image?: string | null) {
+  if (!image) {
+    return "";
+  }
+
+  if (/^https?:\/\//i.test(image)) {
+    return image;
+  }
+
+  const assetsBase = process.env.NEXT_PUBLIC_ASSETS_URL?.replace(/\/$/, "");
+  const normalizedPath = image.startsWith("/") ? image : `/${image}`;
+
+  return assetsBase ? `${assetsBase}${normalizedPath}` : normalizedPath;
+}
+
+function normalizeButtonHref(value?: string | null) {
+  const rawValue = value?.trim() || "";
+
+  if (!rawValue) {
+    return "";
+  }
+
+  if (/^https?:\/\//i.test(rawValue) || rawValue.startsWith("/")) {
+    return rawValue;
+  }
+
+  return `https://${rawValue}`;
+}
 
 function AnimatedPhrase({
   text,
   active,
   className = "",
   letterClassName = "",
-  enterDelay = 12,
-  exitDelay = 8,
-  enterDuration = 420,
-  exitDuration = 260,
+  enterDelay = 18,
+  exitDelay = 12,
+  enterDuration = 560,
+  exitDuration = 340,
 }: {
   text: string;
   active: boolean;
@@ -54,11 +71,8 @@ function AnimatedPhrase({
   enterDuration?: number;
   exitDuration?: number;
 }) {
-  const words = text.trim().split(/\s+/);
-  const totalLetters = words.reduce(
-    (count, word) => count + Array.from(word).length,
-    0,
-  );
+  const words = text.trim().split(/\s+/).filter(Boolean);
+  const totalLetters = words.reduce((count, word) => count + Array.from(word).length, 0);
   let letterIndex = 0;
 
   return (
@@ -76,9 +90,7 @@ function AnimatedPhrase({
               return (
                 <span
                   key={`${word}-${wordIndex}-${currentIndex}`}
-                  className={`hero-letter ${
-                    active ? "hero-letter-in" : "hero-letter-out"
-                  } ${letterClassName}`}
+                  className={`hero-letter ${active ? "hero-letter-in" : "hero-letter-out"} ${letterClassName}`}
                   style={{
                     animationDelay: `${delay}ms`,
                     animationDuration: `${active ? enterDuration : exitDuration}ms`,
@@ -89,9 +101,7 @@ function AnimatedPhrase({
               );
             })}
 
-            {wordIndex < words.length - 1 ? (
-              <span aria-hidden="true" className="inline-block w-[0.24em]" />
-            ) : null}
+            {wordIndex < words.length - 1 ? <span aria-hidden="true" className="inline-block w-[0.24em]" /> : null}
           </span>
         ))}
       </span>
@@ -99,22 +109,20 @@ function AnimatedPhrase({
   );
 }
 
-function GsapTitle({
-  text,
-  active,
-}: {
-  text: string;
-  active: boolean;
-}) {
+function GsapTitle({ text, active }: { text: string; active: boolean }) {
   const rootRef = useRef<HTMLSpanElement>(null);
   const timelineRef = useRef<gsap.core.Timeline | null>(null);
 
   useLayoutEffect(() => {
     const root = rootRef.current;
-    if (!root) return;
+    if (!root) {
+      return;
+    }
 
     const textEl = root.querySelector<HTMLElement>("[data-title-text]");
-    if (!textEl) return;
+    if (!textEl) {
+      return;
+    }
 
     timelineRef.current?.kill();
     timelineRef.current = null;
@@ -137,7 +145,7 @@ function GsapTitle({
 
       timeline.to(state, {
         count: chars.length,
-        duration: Math.max(chars.length * 0.05, 2),
+        duration: Math.max(chars.length * 0.08, 3),
         onUpdate: render,
       });
 
@@ -165,7 +173,7 @@ function GsapTitle({
 
     timeline.to(state, {
       count: 0,
-      duration: Math.max(chars.length * 0.018, 0.22),
+      duration: Math.max(chars.length * 0.03, 0.32),
       onUpdate: render,
       onComplete: () => {
         textEl.textContent = "";
@@ -179,38 +187,162 @@ function GsapTitle({
   }, [active, text]);
 
   return (
-    <span
-      ref={rootRef}
-      className="relative block w-full"
-      aria-label={text}
-    >
+    <span ref={rootRef} className="relative block w-full" aria-label={text}>
       <span className="sr-only">{text}</span>
       <span aria-hidden="true" className="invisible block text-balance">
         {text}
       </span>
-      <span
-        aria-hidden="true"
-        className="absolute inset-0 overflow-hidden text-balance"
-      >
+      <span aria-hidden="true" className="absolute inset-0 overflow-hidden text-balance">
         <span data-title-text className="hero-typewriter-text" />
-        <span
-          className={`hero-caret ${active ? "hero-caret-active" : "hero-caret-hidden"}`}
-        />
+        <span className={`hero-caret ${active ? "hero-caret-active" : "hero-caret-hidden"}`} />
       </span>
     </span>
   );
 }
 
+function LoadingSkeleton() {
+  return (
+    <div className="grid min-h-[60vh] items-center gap-10 lg:absolute lg:inset-0 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:gap-10">
+      <div className="hero-copy-shell relative z-10 max-w-2xl">
+        <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-background/70 px-4 py-2 backdrop-blur">
+          <span className="h-3 w-3 rounded-full bg-primary/35 animate-pulse" />
+          <span className="h-3 w-44 rounded-full bg-foreground/10 animate-pulse" />
+        </div>
+
+        <div className="mt-5 space-y-3">
+          <div className="h-10 w-[92%] rounded-full bg-foreground/10 animate-pulse sm:h-12 lg:h-16" />
+          <div className="h-10 w-[78%] rounded-full bg-foreground/10 animate-pulse sm:h-12 lg:h-16" />
+        </div>
+
+        <div className="mt-6 space-y-2">
+          <div className="h-4 w-full rounded-full bg-foreground/10 animate-pulse" />
+          <div className="h-4 w-[92%] rounded-full bg-foreground/10 animate-pulse" />
+          <div className="h-4 w-[84%] rounded-full bg-foreground/10 animate-pulse" />
+        </div>
+
+        <div className="mt-8 flex gap-3">
+          <div className="h-12 w-40 rounded-full bg-foreground/10 animate-pulse" />
+        </div>
+
+        <div className="mt-10 grid gap-3 sm:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, index) => (
+            <div
+              key={`hero-stat-skeleton-${index}`}
+              className="rounded-2xl border border-border/70 bg-background/70 p-4 shadow-sm backdrop-blur"
+            >
+              <div className="h-8 w-12 rounded-full bg-foreground/10 animate-pulse" />
+              <div className="mt-3 h-3 w-24 rounded-full bg-foreground/10 animate-pulse" />
+              <div className="mt-2 h-3 w-32 rounded-full bg-foreground/10 animate-pulse" />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="hero-media-shell relative z-10">
+        <div className="relative mx-auto w-full max-w-[620px]">
+          <div className="hero-image-frame relative overflow-hidden rounded-[1.75rem] p-3 shadow-[0_30px_80px_-40px_rgba(15,23,42,0.45)] backdrop-blur-xl sm:rounded-[2rem]">
+            <div className="relative aspect-[4/5] overflow-hidden rounded-[1.35rem] bg-foreground/10 sm:aspect-[5/6] sm:rounded-[1.6rem]">
+              <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-foreground/10 via-foreground/5 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/12 via-transparent to-transparent" />
+            </div>
+          </div>
+
+          <div className="hero-float-card absolute -bottom-3 left-3 right-3 rounded-2xl border border-border/70 px-4 py-3 shadow-lg backdrop-blur sm:right-auto sm:left-4">
+            <div className="flex items-center gap-3">
+              <div className="grid size-10 place-items-center rounded-full bg-primary/10 text-primary">
+                <LuClock3 size={18} />
+              </div>
+              <div className="space-y-2">
+                <div className="h-3 w-36 rounded-full bg-foreground/10 animate-pulse" />
+                <div className="h-3 w-48 rounded-full bg-foreground/10 animate-pulse" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function resolveEntries(records: HeroSectionRecord[]) {
+  return records.map((record) => ({
+    eyebrow: record.badge || "Hero section",
+    title: record.title,
+    text: record.subtitle,
+    buttonText: "Book Consultation",
+    learnMoreHref: normalizeButtonHref(record.ButtonLink?.text),
+    image: resolveImageUrl(record.image),
+    alt: record.title,
+    stats: record.stats ?? [],
+    floatingCards: record.floatingCards ?? [],
+  }));
+}
+
 export default function HeroSwiper() {
   const [activeIndex, setActiveIndex] = useState(0);
+  const [heroRecords, setHeroRecords] = useState<HeroSectionRecord[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { data: clinicSettings } = useGetClinicSettingsQuery();
+  const latestSettings = clinicSettings?.[0];
+  const whatsappNumber = latestSettings?.whatsappNumber || "+961 81 778 142";
+  const whatsappDigits = whatsappNumber.replace(/\D/g, "");
+  const whatsappHref = `https://wa.me/${whatsappDigits}`;
 
   useEffect(() => {
+    let ignore = false;
+
+    const loadHeroSections = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/hero-section`, {
+          cache: "no-store",
+        });
+
+        if (!response.ok) {
+          if (!ignore) {
+            setHeroRecords([]);
+          }
+          return;
+        }
+
+        const data = (await response.json()) as HeroSectionRecord[];
+
+        if (!ignore) {
+          setHeroRecords(Array.isArray(data) ? data : []);
+        }
+      } catch {
+        if (!ignore) {
+          setHeroRecords([]);
+        }
+      } finally {
+        if (!ignore) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    void loadHeroSections();
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
+  const slides = useMemo(() => resolveEntries(heroRecords), [heroRecords]);
+
+  useEffect(() => {
+    if (slides.length <= 1) {
+      return;
+    }
+
     const interval = window.setInterval(() => {
       setActiveIndex((current) => (current + 1) % slides.length);
     }, 5200);
 
     return () => window.clearInterval(interval);
-  }, []);
+  }, [slides.length]);
+
+  const displayActiveIndex = slides.length > 0 ? activeIndex % slides.length : 0;
+  const activeSlide = slides[displayActiveIndex] ?? null;
 
   return (
     <section className="hero-shell hero-carousel relative overflow-hidden">
@@ -222,124 +354,132 @@ export default function HeroSwiper() {
 
       <div className="relative mx-auto max-w-[1600px] px-4 pt-6 sm:px-6 sm:py-10 lg:min-h-[calc(90svh-90px)] lg:px-8 xl:px-10">
         <div className="relative lg:min-h-[calc(90svh-110px)]">
-          <div className="relative">
-            {slides.map((slide, index) => {
-              const isActive = index === activeIndex;
+          {isLoading ? (
+            <LoadingSkeleton />
+          ) : !activeSlide ? (
+            <div className="grid min-h-[60vh] place-items-center text-center">
+              <p className="text-sm font-medium text-foreground/60">No hero content available yet.</p>
+            </div>
+          ) : (
+            <>
+              <article className="hero-carousel-slide hero-carousel-slide-active grid items-start gap-6 transition-all duration-700 ease-out sm:gap-8 lg:absolute lg:inset-0 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:gap-10">
+                <div className="hero-copy-shell relative z-10 max-w-2xl">
+                  <div
+                    data-hero-reveal
+                    data-hero-step="0"
+                    className="hero-fade inline-flex items-center gap-2 rounded-full border border-border/70 bg-background/70 px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.28em] text-primary shadow-sm backdrop-blur sm:text-[11px]"
+                  >
+                    <LuSparkles size={14} />
+                    <AnimatedPhrase
+                      text={activeSlide.eyebrow}
+                      active
+                      enterDelay={18}
+                      exitDelay={12}
+                      enterDuration={560}
+                      exitDuration={340}
+                    />
+                  </div>
 
-              return (
-                <article
-                  key={slide.title}
-                  aria-hidden={!isActive}
-                  className={`hero-carousel-slide grid items-start gap-6 transition-all duration-700 ease-out sm:gap-8 lg:absolute lg:inset-0 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:gap-10 ${
-                    isActive
-                      ? "hero-carousel-slide-active pointer-events-auto opacity-100 translate-y-0 scale-100"
-                      : "hidden pointer-events-none opacity-0 translate-y-3 scale-[0.985] lg:grid"
-                  }`}
-                >
-                  <div className="hero-copy-shell relative z-10 max-w-2xl">
-                    <div
-                      data-hero-reveal
-                      data-hero-step="0"
-                      className="hero-fade inline-flex items-center gap-2 rounded-full border border-border/70 bg-background/70 px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.28em] text-primary shadow-sm backdrop-blur sm:text-[11px]"
-                    >
-                      <LuSparkles size={14} />
-                      <AnimatedPhrase
-                        text={slide.eyebrow}
-                        active={isActive}
-                        enterDelay={14}
-                        exitDelay={10}
-                        enterDuration={360}
-                        exitDuration={240}
-                      />
-                    </div>
+                  <h1
+                    data-hero-reveal
+                    data-hero-step="1"
+                    className="hero-fade mt-5 max-w-2xl text-balance text-4xl font-semibold leading-[1.12] tracking-[-0.03em] text-foreground sm:text-5xl lg:leading-[1.08] xl:text-[3.65rem] xl:leading-[1.08]"
+                  >
+                    <GsapTitle text={activeSlide.title} active />
+                  </h1>
 
-                    <h1
-                      data-hero-reveal
-                      data-hero-step="1"
-                      className="hero-fade mt-5 max-w-xl text-balance text-4xl font-semibold leading-[1.05] tracking-[-0.04em] text-foreground sm:text-5xl lg:text-6xl"
-                    >
-                      <GsapTitle
-                        text={slide.title}
-                        active={isActive}
-                      />
-                    </h1>
+                  <p
+                    data-hero-reveal
+                    data-hero-step="2"
+                    className="hero-fade mt-6 max-w-xl text-base leading-8 text-foreground/70 sm:text-lg"
+                  >
+                    {activeSlide.text}
+                  </p>
 
-                    <p
-                      data-hero-reveal
-                      data-hero-step="2"
-                      className="hero-fade mt-6 max-w-xl text-base leading-8 text-foreground/70 sm:text-lg"
+                  <div
+                    data-hero-reveal
+                    data-hero-step="3"
+                    className="hero-fade hero-actions mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center"
+                  >
+                    <Link
+                      href={whatsappHref}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="hero-action-link inline-flex items-center justify-center gap-2 rounded-full bg-primary px-6 py-3.5 text-sm font-semibold text-primary-foreground shadow-[0_18px_40px_-22px_rgba(63,132,184,0.9)] transition hover:-translate-y-0.5 hover:opacity-95"
                     >
-                      {slide.text}
-                    </p>
-
-                    <div
-                      data-hero-reveal
-                      data-hero-step="3"
-                      className="hero-fade hero-actions mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center"
-                    >
+                      Book Now
+                      <LuArrowRight size={16} />
+                    </Link>
+                    {activeSlide.learnMoreHref ? (
                       <Link
-                        href="#"
-                        className="hero-action-link inline-flex items-center justify-center gap-2 rounded-full bg-primary px-6 py-3.5 text-sm font-semibold text-primary-foreground shadow-[0_18px_40px_-22px_rgba(63,132,184,0.9)] transition hover:-translate-y-0.5 hover:opacity-95"
-                      >
-                        Book Consultation
-                        <LuArrowRight size={16} />
-                      </Link>
-                      <Link
-                        href="#"
+                        href={activeSlide.learnMoreHref}
+                        target={/^https?:\/\//i.test(activeSlide.learnMoreHref) ? "_blank" : undefined}
+                        rel={/^https?:\/\//i.test(activeSlide.learnMoreHref) ? "noreferrer" : undefined}
                         className="hero-action-link inline-flex items-center justify-center gap-2 rounded-full border border-border bg-background/70 px-6 py-3.5 text-sm font-semibold text-foreground/80 shadow-sm transition hover:-translate-y-0.5 hover:border-primary/40 hover:text-primary"
                       >
-                        Learn More
+                        Online Consultation
+                        <LuArrowRight size={16} />
                       </Link>
-                    </div>
+                    ) : null}
+                  </div>
 
+                  {activeSlide.stats.length > 0 ? (
                     <div
                       data-hero-reveal
                       data-hero-step="4"
                       className="hero-fade hero-stats mt-10 grid gap-3 sm:grid-cols-3"
                     >
-                      {quickStats.map((stat) => (
+                      {activeSlide.stats.map((stat, index) => (
                         <div
-                          key={stat.label}
+                          key={`${activeSlide.title}-stat-${index}`}
                           className="hero-stat-card rounded-2xl border border-border/70 bg-background/70 p-4 shadow-sm backdrop-blur"
                         >
                           <p className="text-2xl font-semibold tracking-[-0.04em] text-foreground">
-                            {stat.value}
+                            {stat.value || "-"}
                           </p>
                           <p className="mt-1 text-xs font-medium uppercase tracking-[0.22em] text-foreground/55">
-                            {stat.label}
+                            {stat.label || "-"}
                           </p>
                         </div>
                       ))}
                     </div>
-                  </div>
+                  ) : null}
+                </div>
 
-                  <div className="hero-media-shell relative z-10">
-                    <div className="relative mx-auto w-full max-w-[620px]">
-                      <div className="absolute -left-2 top-10 h-20 w-20 rounded-full bg-primary/20 blur-2xl sm:-left-8 sm:top-12 sm:h-32 sm:w-32" />
-                      <div className="absolute -right-2 bottom-10 h-24 w-24 rounded-full bg-sky-300/20 blur-2xl sm:-right-8 sm:h-36 sm:w-36" />
+                <div className="hero-media-shell relative z-10">
+                  <div className="relative mx-auto w-full max-w-[620px]">
+                    <div className="absolute -left-2 top-10 h-20 w-20 rounded-full bg-primary/20 blur-2xl sm:-left-8 sm:top-12 sm:h-32 sm:w-32" />
+                    <div className="absolute -right-2 bottom-10 h-24 w-24 rounded-full bg-sky-300/20 blur-2xl sm:-right-8 sm:h-36 sm:w-36" />
 
-                      <div
-                        data-hero-reveal
-                        data-hero-step="5"
-                        className="hero-image-frame hero-media-frame relative overflow-hidden rounded-[1.75rem] p-3 shadow-[0_30px_80px_-40px_rgba(15,23,42,0.45)] backdrop-blur-xl sm:rounded-[2rem]"
-                      >
-                        <div className="relative aspect-[4/5] overflow-hidden rounded-[1.35rem] bg-slate-100 sm:aspect-[5/6] sm:rounded-[1.6rem]">
+                    <div
+                      data-hero-reveal
+                      data-hero-step="5"
+                      className="hero-image-frame hero-media-frame relative overflow-hidden rounded-[1.75rem] p-3 shadow-[0_30px_80px_-40px_rgba(15,23,42,0.45)] backdrop-blur-xl sm:rounded-[2rem]"
+                    >
+                      <div className="relative aspect-[4/5] overflow-hidden rounded-[1.35rem] bg-slate-100 sm:aspect-[5/6] sm:rounded-[1.6rem]">
+                        {activeSlide.image ? (
                           <Image
-                            src={slide.image}
-                            alt={slide.title}
+                            src={activeSlide.image}
+                            alt={activeSlide.alt}
                             fill
-                            priority={index === 0}
+                            priority
                             sizes="(max-width: 1024px) 100vw, 50vw"
                             className="hero-image object-cover object-center"
                           />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/18 via-transparent to-transparent" />
-                          <span
-                            aria-hidden="true"
-                            className="hero-image-sheen pointer-events-none absolute inset-y-0 left-[-35%] w-[35%] bg-gradient-to-r from-transparent via-white/25 to-transparent"
-                          />
-                        </div>
+                        ) : (
+                          <div className="absolute inset-0 grid place-items-center bg-slate-100 text-sm text-slate-400">
+                            No image
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/18 via-transparent to-transparent" />
+                        <span
+                          aria-hidden="true"
+                          className="hero-image-sheen pointer-events-none absolute inset-y-0 left-[-35%] w-[35%] bg-gradient-to-r from-transparent via-white/25 to-transparent"
+                        />
                       </div>
+                    </div>
 
+                    {activeSlide.floatingCards[0] ? (
                       <div
                         data-hero-reveal
                         data-hero-step="6"
@@ -351,15 +491,17 @@ export default function HeroSwiper() {
                           </div>
                           <div>
                             <p className="text-sm font-semibold text-foreground">
-                              Specialized Care
+                              {activeSlide.floatingCards[0].title || "Specialized Care"}
                             </p>
                             <p className="text-xs text-foreground/60">
-                              {slide.highlight}
+                              {activeSlide.floatingCards[0].subtitle || activeSlide.text}
                             </p>
                           </div>
                         </div>
                       </div>
+                    ) : null}
 
+                    {activeSlide.floatingCards[1] ? (
                       <div
                         data-hero-reveal
                         data-hero-step="7"
@@ -371,37 +513,37 @@ export default function HeroSwiper() {
                           </div>
                           <div>
                             <p className="text-sm font-semibold text-foreground">
-                              International Expertise
+                              {activeSlide.floatingCards[1].title || "International Expertise"}
                             </p>
                             <p className="text-xs text-foreground/60">
-                              Lebanon, UAE & Bahrain
+                              {activeSlide.floatingCards[1].subtitle || ""}
                             </p>
                           </div>
                         </div>
                       </div>
-                    </div>
+                    ) : null}
                   </div>
-                </article>
-              );
-            })}
-          </div>
+                </div>
+              </article>
 
-          <div className="hero-dots relative z-20 mt-6 mx-auto flex w-fit items-center gap-2 rounded-full border border-border/70 bg-background/75 px-3 py-2 shadow-sm backdrop-blur lg:absolute lg:left-1/2 lg:bottom-0 lg:mt-0 lg:-translate-x-1/2">
-            {slides.map((slide, index) => (
-              <button
-                key={slide.title}
-                type="button"
-                aria-label={`Show slide ${index + 1}`}
-                aria-pressed={index === activeIndex}
-                onClick={() => setActiveIndex(index)}
-                className={`h-2.5 rounded-full transition-all duration-300 ${
-                  index === activeIndex
-                    ? "w-8 bg-primary"
-                    : "w-2.5 bg-primary/25 hover:bg-primary/45"
-                }`}
-              />
-            ))}
-          </div>
+              {slides.length > 1 ? (
+                <div className="hero-dots relative z-20 mt-6 mx-auto flex w-fit items-center gap-2 rounded-full border border-border/70 bg-background/75 px-3 py-2 shadow-sm backdrop-blur lg:absolute lg:left-1/2 lg:bottom-0 lg:mt-0 lg:-translate-x-1/2">
+                  {slides.map((slide, index) => (
+                    <button
+                      key={slide.title}
+                      type="button"
+                      aria-label={`Show slide ${index + 1}`}
+                      aria-pressed={index === displayActiveIndex}
+                      onClick={() => setActiveIndex(index)}
+                      className={`h-2.5 rounded-full transition-all duration-300 ${
+                        index === displayActiveIndex ? "w-8 bg-primary" : "w-2.5 bg-primary/25 hover:bg-primary/45"
+                      }`}
+                    />
+                  ))}
+                </div>
+              ) : null}
+            </>
+          )}
         </div>
       </div>
     </section>

@@ -4,42 +4,65 @@ import Image from "next/image";
 import Link from "next/link";
 import { Mail, MapPin, Phone } from "lucide-react";
 import { FaFacebookF, FaInstagram, FaYoutube } from "react-icons/fa6";
-
-const socialLinks = [
-  { label: "Instagram", href: "#", icon: FaInstagram },
-  { label: "Facebook", href: "#", icon: FaFacebookF },
-  { label: "YouTube", href: "#", icon: FaYoutube },
-];
+import { useGetClinicSettingsQuery } from "@/lib/redux/api";
 
 const quickLinks = [
   { label: "Home", href: "/" },
-  { label: "Availability", href: "/availability" },
-  { label: "Videos", href: "/videos" },
-  { label: "Research", href: "/re-searsh" },
-];
-
-const contactLinks = [
-  {
-    label: "WhatsApp / SMS",
-    value: "+961 81 778 142",
-    href: "https://wa.me/96181778142",
-    icon: Phone,
-  },
-  {
-    label: "Email",
-    value: "info@drbachirabiad.com",
-    href: "mailto:info@drbachirabiad.com",
-    icon: Mail,
-  },
-  {
-    label: "Main Location",
-    value: "CMC Beirut, Lebanon",
-    href: "/availability",
-    icon: MapPin,
-  },
+  { label: "LASIK", href: "/lasik-beirut" },
+  { label: "Cataract", href: "/cataract-surgery-beirut" },
+  { label: "Corneal Transplant", href: "/corneal-transplant-lebanon" },
 ];
 
 export default function Footer() {
+  const { data: clinicSettings } = useGetClinicSettingsQuery();
+  const latestSettings = clinicSettings?.[0];
+
+  const whatsappNumber = latestSettings?.whatsappNumber || "+961 81 778 142";
+  const phoneNumber = latestSettings?.phoneNumber || "+961 81 778 142";
+  const email = latestSettings?.email || "info@drbachirabiad.com";
+  const location = latestSettings?.location || "CMC Beirut, Lebanon";
+
+  const socialLinks = [
+    {
+      label: "Instagram",
+      href: latestSettings?.instagram || "#",
+      icon: FaInstagram,
+    },
+    {
+      label: "Facebook",
+      href: latestSettings?.facebook || "#",
+      icon: FaFacebookF,
+    },
+    { label: "YouTube", href: "#", icon: FaYoutube },
+  ];
+
+  const contactLinks = [
+    {
+      label: "WhatsApp / SMS",
+      value: whatsappNumber,
+      href: `https://wa.me/${whatsappNumber.replace(/\D/g, "")}`,
+      icon: Phone,
+    },
+    {
+      label: "Phone",
+      value: phoneNumber,
+      href: `tel:${phoneNumber.replace(/\s+/g, "")}`,
+      icon: Phone,
+    },
+    {
+      label: "Email",
+      value: email,
+      href: `mailto:${email}`,
+      icon: Mail,
+    },
+    {
+      label: "Main Location",
+      value: location,
+      href: latestSettings?.mapUrl || "/availability",
+      icon: MapPin,
+    },
+  ];
+
   return (
     <footer className="relative overflow-hidden border-t border-border/70 bg-background">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(63,132,184,0.08),_transparent_34%),radial-gradient(circle_at_bottom_right,_rgba(56,189,248,0.06),_transparent_30%)]" />
@@ -70,9 +93,9 @@ export default function Footer() {
             </Link>
 
             <p className="mt-5 max-w-lg text-sm leading-7 text-foreground/68 sm:text-base">
-              Specialized ophthalmology care led by Dr. Bachir Abiad, focusing
-              on cornea, cataract, anterior segment reconstruction, and
-              refractive surgery across Lebanon and the Gulf region.
+              Specialized ophthalmology care led by Dr. Bachir Abiad,
+              focusing on cornea, cataract, anterior segment reconstruction,
+              and refractive surgery across Lebanon and the Gulf region.
             </p>
 
             <div className="mt-6 flex flex-wrap gap-3">

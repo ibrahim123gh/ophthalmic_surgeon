@@ -1,4 +1,4 @@
- "use client";
+"use client";
 
 import { useEffect, useRef, useState } from "react";
 
@@ -6,15 +6,56 @@ import Image from "next/image";
 import Link from "next/link";
 import { LuArrowRight, LuCircleCheck, LuSparkles } from "react-icons/lu";
 
-const highlights = [
-  "Chief of Ophthalmology at Clemenceau Medical Center",
-  "Anterior segment, cornea, and refractive surgery specialist",
-  "Fellowship-trained at UT Southwestern Medical Center",
-];
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5000/api/v1";
+
+type AboutSection = {
+  title?: string;
+  description?: string;
+  core?: { title?: string }[];
+  profileHiglight?: string;
+};
+
+type SettingsRecord = {
+  aboutSection?: AboutSection;
+};
 
 export default function AboutDoctor() {
   const sectionRef = useRef<HTMLElement>(null);
   const [isVisible, setIsVisible] = useState(false);
+  const [aboutSection, setAboutSection] = useState<AboutSection | null>(null);
+
+  useEffect(() => {
+    let ignore = false;
+
+    const loadSettings = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/settings`, {
+          cache: "no-store",
+        });
+
+        if (!response.ok) {
+          return;
+        }
+
+        const data = (await response.json()) as SettingsRecord[];
+
+        if (!ignore && Array.isArray(data) && data.length > 0) {
+          setAboutSection(data[0].aboutSection ?? null);
+        }
+      } catch {
+        if (!ignore) {
+          setAboutSection(null);
+        }
+      }
+    };
+
+    void loadSettings();
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   useEffect(() => {
     const section = sectionRef.current;
@@ -40,6 +81,26 @@ export default function AboutDoctor() {
       observer.disconnect();
     };
   }, []);
+
+  const highlights =
+    aboutSection?.core?.map((item) => item.title?.trim()).filter((value): value is string => Boolean(value)) ??
+    [
+      "Chief of Ophthalmology at Clemenceau Medical Center",
+      "Anterior segment, cornea, and refractive surgery specialist",
+      "Fellowship-trained at UT Southwestern Medical Center",
+    ];
+
+  const title =
+    aboutSection?.title?.trim() ||
+    "Meet Dr. Bachir Abiad, a specialist in advanced eye surgery.";
+
+  const description =
+    aboutSection?.description?.trim() ||
+    "Dr. Bachir Abiad is the Chief of the Department of Ophthalmology at Clemenceau Medical Center in Beirut. He is a highly specialized anterior segment, cornea, and refractive surgeon with advanced fellowship training from UT Southwestern Medical Center in the United States.";
+
+  const profileHighlight =
+    aboutSection?.profileHiglight?.trim() ||
+    "Trusted surgical care with calm, precise follow-up.";
 
   return (
     <section
@@ -79,7 +140,7 @@ export default function AboutDoctor() {
                   Profile highlight
                 </p>
                 <p className="mt-2 text-sm leading-6 text-white/88">
-                  Trusted surgical care with calm, precise follow-up.
+                  {profileHighlight}
                 </p>
               </div>
             </div>
@@ -94,19 +155,15 @@ export default function AboutDoctor() {
           >
             <p className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/10 px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.28em] text-primary sm:text-[11px]">
               <LuSparkles size={14} />
-              About doctor
+              {aboutSection?.title?.trim() || "About doctor"}
             </p>
 
             <h2 className="mt-5 text-3xl font-semibold leading-[1.05] tracking-[-0.05em] text-foreground sm:text-4xl lg:text-5xl">
-              Meet Dr. Bachir Abiad, a specialist in advanced eye surgery.
+              {title}
             </h2>
 
             <p className="mt-5 max-w-2xl text-sm leading-7 text-foreground/70 sm:text-base sm:leading-8">
-              Dr. Bachir Abiad is the Chief of the Department of Ophthalmology
-              at Clemenceau Medical Center in Beirut. He is a highly
-              specialized anterior segment, cornea, and refractive surgeon with
-              advanced fellowship training from UT Southwestern Medical Center
-              in the United States.
+              {description}
             </p>
 
             <div className="mt-8 space-y-3 rounded-[1.5rem] border border-border/70 bg-background/80 p-5 shadow-sm backdrop-blur sm:p-6">

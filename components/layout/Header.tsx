@@ -18,9 +18,9 @@ const poppins = Poppins({
 
 const navLinks = [
   { label: "HOME", href: "/" },
-  { label: "AVAILABILITY", href: "/availability" },
-  { label: "VIDEOS", href: "/videos" },
-  { label: "RESEARCH", href: "/re-searsh" },
+  { label: "LASIK", href: "/lasik-beirut" },
+  { label: "CATARACT", href: "/cataract-surgery-beirut" },
+  { label: "CORNEAL TRANSPLANT", href: "/corneal-transplant-lebanon" },
 ];
 
 export default function Header() {

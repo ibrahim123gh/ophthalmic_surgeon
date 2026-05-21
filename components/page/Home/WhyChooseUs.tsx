@@ -3,9 +3,28 @@
 import { useEffect, useRef, useState } from "react";
 
 import Image from "next/image";
-import { ArrowUpRight, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 
-const items = [
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5000/api/v1";
+
+type WhyChooseUsItem = {
+  _id: string;
+  title: string;
+  description: string;
+  image: string;
+  category?: string;
+  order?: number;
+};
+
+type WhyChooseUsDisplayItem = {
+  title: string;
+  text: string;
+  image: string;
+  category?: string;
+};
+
+const fallbackItems: WhyChooseUsDisplayItem[] = [
   {
     title: "US Fellowship Training",
     text: "Advanced subspecialty training in cornea, anterior segment, and refractive surgery at UT Southwestern Medical Center in the USA.",
@@ -23,9 +42,93 @@ const items = [
   },
 ];
 
+type SettingsRecord = {
+  WhyChooseUs?: {
+    title?: string;
+    description?: string;
+  };
+};
+
 export default function WhyChooseUs() {
   const sectionRef = useRef<HTMLElement>(null);
   const [isVisible, setIsVisible] = useState(false);
+  const [sectionCopy, setSectionCopy] = useState<SettingsRecord["WhyChooseUs"] | null>(null);
+  const [items, setItems] = useState<WhyChooseUsDisplayItem[]>(fallbackItems);
+
+  useEffect(() => {
+    let ignore = false;
+
+    const loadSettings = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/settings`, {
+          cache: "no-store",
+        });
+
+        if (!response.ok) {
+          return;
+        }
+
+        const data = (await response.json()) as SettingsRecord[];
+
+        if (!ignore && Array.isArray(data) && data.length > 0) {
+          setSectionCopy(data[0].WhyChooseUs ?? null);
+        }
+      } catch {
+        if (!ignore) {
+          setSectionCopy(null);
+        }
+      }
+    };
+
+    const loadItems = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/why-choose-us`, {
+          cache: "no-store",
+        });
+
+        if (!response.ok) {
+          return;
+        }
+
+        const data = (await response.json()) as WhyChooseUsItem[];
+
+        if (ignore || !Array.isArray(data) || data.length === 0) {
+          return;
+        }
+
+        setItems(
+          data
+            .slice()
+            .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+            .map((item) => ({
+              title: item.title,
+              text: item.description,
+              image: item.image,
+              category: item.category,
+            }))
+        );
+      } catch {
+        if (!ignore) {
+          setItems(fallbackItems);
+        }
+      }
+    };
+
+    void loadSettings();
+    void loadItems();
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
+  const sectionTitle =
+    sectionCopy?.title?.trim() ||
+    "International expertise combined with advanced ophthalmic surgical care.";
+
+  const sectionDescription =
+    sectionCopy?.description?.trim() ||
+    "A patient-centered approach supported by modern surgical techniques, academic leadership, and specialized international training.";
 
   useEffect(() => {
     const section = sectionRef.current;
@@ -72,20 +175,18 @@ export default function WhyChooseUs() {
           </span>
 
           <h2 className="mt-5 text-3xl font-semibold leading-tight tracking-[-0.05em] text-foreground sm:text-4xl lg:text-5xl">
-            International expertise combined with advanced ophthalmic surgical
-            care.
+            {sectionTitle}
           </h2>
 
           <p className="mt-4 text-sm leading-7 text-foreground/70 sm:text-base">
-            A patient-centered approach supported by modern surgical techniques,
-            academic leadership, and specialized international training.
+            {sectionDescription}
           </p>
         </div>
 
         <div className="mt-10 grid gap-4 md:grid-cols-3">
           {items.map((item, index) => (
             <article
-              key={index}
+              key={`${item.title}-${index}`}
               className={`group overflow-hidden rounded-[1.75rem] border border-border/70 bg-background/80 shadow-[0_18px_60px_-36px_rgba(15,23,42,0.35)] backdrop-blur transition-all duration-500 ease-out motion-reduce:transform-none motion-reduce:transition-none motion-safe:hover:-translate-y-1 motion-safe:hover:border-primary/40 motion-safe:hover:shadow-[0_24px_70px_-40px_rgba(63,132,184,0.25)] ${
                 isVisible
                   ? "translate-y-0 opacity-100"
@@ -124,12 +225,8 @@ export default function WhyChooseUs() {
 
                 <div className="mt-6 flex items-center justify-between border-t border-border/70 pt-4">
                   <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-foreground/45">
-                    Specialized ophthalmology
+                    {item.category || "Specialized ophthalmology"}
                   </span>
-
-                  <div className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-primary/15 bg-primary/10 text-primary transition duration-300 motion-safe:group-hover:translate-x-1 motion-safe:group-hover:bg-primary motion-safe:group-hover:text-primary-foreground">
-                    <ArrowUpRight size={18} />
-                  </div>
                 </div>
               </div>
             </article>

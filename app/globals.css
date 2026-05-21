@@ -209,58 +209,58 @@ body {
 }
 
 .hero-carousel .hero-carousel-slide-active .hero-copy-shell {
-  animation: hero-copy-rise 760ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: hero-copy-rise 1100ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .hero-carousel .hero-carousel-slide-active .hero-actions .hero-action-link {
-  animation: hero-action-pop 720ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: hero-action-pop 980ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .hero-carousel .hero-carousel-slide-active .hero-actions .hero-action-link:nth-child(2) {
-  animation-delay: 120ms;
-}
-
-.hero-carousel .hero-carousel-slide-active .hero-stats .hero-stat-card {
-  animation: hero-card-pop 720ms cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-.hero-carousel .hero-carousel-slide-active .hero-stats .hero-stat-card:nth-child(1) {
-  animation-delay: 200ms;
-}
-
-.hero-carousel .hero-carousel-slide-active .hero-stats .hero-stat-card:nth-child(2) {
-  animation-delay: 260ms;
-}
-
-.hero-carousel .hero-carousel-slide-active .hero-stats .hero-stat-card:nth-child(3) {
-  animation-delay: 320ms;
-}
-
-.hero-carousel .hero-carousel-slide-active .hero-media-shell {
-  animation: hero-media-shell-in 900ms cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-.hero-carousel .hero-carousel-slide-active .hero-media-frame {
-  animation: hero-media-frame-in 900ms cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-.hero-carousel .hero-carousel-slide-active .hero-image {
-  animation: hero-image-zoom 720ms cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-.hero-carousel .hero-carousel-slide-active .hero-image-sheen {
-  animation: hero-image-sheen-sweep 1200ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  animation-delay: 120ms;
-}
-
-.hero-carousel .hero-carousel-slide-active .hero-float-card-primary {
-  animation: hero-card-pop 720ms cubic-bezier(0.22, 1, 0.36, 1) both;
   animation-delay: 180ms;
 }
 
+.hero-carousel .hero-carousel-slide-active .hero-stats .hero-stat-card {
+  animation: hero-card-pop 980ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.hero-carousel .hero-carousel-slide-active .hero-stats .hero-stat-card:nth-child(1) {
+  animation-delay: 280ms;
+}
+
+.hero-carousel .hero-carousel-slide-active .hero-stats .hero-stat-card:nth-child(2) {
+  animation-delay: 360ms;
+}
+
+.hero-carousel .hero-carousel-slide-active .hero-stats .hero-stat-card:nth-child(3) {
+  animation-delay: 440ms;
+}
+
+.hero-carousel .hero-carousel-slide-active .hero-media-shell {
+  animation: hero-media-shell-in 1200ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.hero-carousel .hero-carousel-slide-active .hero-media-frame {
+  animation: hero-media-frame-in 1200ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.hero-carousel .hero-carousel-slide-active .hero-image {
+  animation: hero-image-zoom 1050ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.hero-carousel .hero-carousel-slide-active .hero-image-sheen {
+  animation: hero-image-sheen-sweep 1700ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: 180ms;
+}
+
+.hero-carousel .hero-carousel-slide-active .hero-float-card-primary {
+  animation: hero-card-pop 980ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: 260ms;
+}
+
 .hero-carousel .hero-carousel-slide-active .hero-float-card-secondary {
-  animation: hero-card-pop 720ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  animation-delay: 290ms;
+  animation: hero-card-pop 980ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: 390ms;
 }
 
 .hero-carousel .hero-letter {

@@ -1,129 +1,88 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { LuCalendarDays, LuFileText } from "react-icons/lu";
+import { useGetPublicationsQuery } from "@/lib/redux/api";
 
-type Publication = {
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5000/api/v1";
+
+type PublicationGroup = {
   year: string;
-  date: string;
-  title: string;
-  journal: string;
-  meta?: string;
-  doi?: string;
+  items: Array<{
+    _id: string;
+    year: string;
+    date: string;
+    title: string;
+    journal: string;
+    meta?: string;
+    doi?: string;
+  }>;
 };
 
-const publications: Publication[] = [
-  {
-    year: "2026",
-    date: "Feb 2026",
-    title:
-      "Validity of a Questionnaire Assessing Preparedness and Self-Reported Confidence of Lebanese Emergency Department Personnel in Managing Ophthalmic Emergencies and Mass Ocular Trauma.",
-    journal: "Maedica (Bucur)",
-    meta: "2026;21(1):129-136",
-    doi: "10.26574/maedica.2026.21.1.129",
-  },
-  {
-    year: "2026",
-    date: "Feb 2026",
-    title:
-      "Surgical management of acute choroidal neovascularization related submacular hemorrhage: Three case reports.",
-    journal: "World Journal of Clinical Cases",
-    meta: "2026;14(6):118545",
-    doi: "10.12998/wjcc.v14.i6.11854",
-  },
-  {
-    year: "2021",
-    date: "Jul 2021",
-    title:
-      "Morphological changes in amblyopic eyes in choriocapillaris and Sattler's layer in comparison to healthy eyes.",
-    journal: "PLOS ONE",
-    meta: "PONE-D-21-10099",
-  },
-  {
-    year: "2020",
-    date: "Aug 2020",
-    title:
-      "Five-Year Results of Combined Small-Aperture Corneal Inlay Implantation and LASIK for the Treatment of Hyperopic Presbyopic Eyes.",
-    journal: "Journal of Refractive Surgery",
-    meta: "2020;36(8):498-505",
-  },
-  {
-    year: "2018",
-    date: "Mar 2018",
-    title:
-      "A Comparison of Visual Outcomes of Deep Anterior Lamellar Keratoplasty versus Penetrating Keratoplasty in Patients with Keratoconus.",
-    journal: "Journal of Ophthalmic Clinical Research",
-    meta: "4:045",
-  },
-  {
-    year: "2018",
-    date: "Mar 2018",
-    title:
-      "Changing Trends in Eye-Related Complaints Presenting to the Emergency Department in Beirut, Lebanon, over 15 Years.",
-    journal: "Journal of Ophthalmology",
-    meta: "Article ID 4739865",
-  },
-  {
-    year: "2017",
-    date: "Aug 2017",
-    title:
-      "Ocular Rosacea Causing Corneal Melt in an African American Patient and a Hispanic Patient.",
-    journal: "Case Reports in Ophthalmological Medicine",
-  },
-  {
-    year: "2017",
-    date: "Jul 2017",
-    title:
-      "Single-step transepithelial versus alcohol-assisted photorefractive keratectomy in the treatment of high myopia.",
-    journal: "British Journal of Ophthalmology",
-    doi: "10.1136/bjophthalmol-2017-310943",
-  },
-  {
-    year: "2016",
-    date: "Apr 2016",
-    title:
-      "Central Corneal Thickness After Cross-linking Using High-Definition Optical Coherence Tomography, Ultrasound, and Dual Scheimpflug Tomography.",
-    journal: "American Journal of Ophthalmology",
-    doi: "10.1016/j.ajo.2016.04.004",
-  },
-  {
-    year: "2015",
-    date: "May 2015",
-    title: "Uveitis in the Aging Eye: Review of Incidence and Patterns.",
-    journal: "Journal of Ophthalmology",
-  },
-  {
-    year: "2014",
-    date: "Oct 2014",
-    title: "Adult Ocular Toxocariasis Mimicking Ciliary Body Malignancy.",
-    journal: "Case Reports in Medicine",
-    doi: "10.1155/2014/368907",
-  },
-  {
-    year: "2008",
-    date: "Oct 2008",
-    title: "Pathophysiology of Migraine.",
-    journal: "Middle East Journal of Family Medicine",
-    meta: "2008, 6, 7, 29-30",
-  },
-] ;
-
-type ArchiveGroup = {
-  year: string;
-  items: Publication[];
+type SettingsRecord = {
+  research?: {
+    title?: string;
+    description?: string;
+  };
 };
-
-const archiveGroups: ArchiveGroup[] = Object.entries(
-  publications.reduce<Record<string, Publication[]>>((acc, publication) => {
-    if (!acc[publication.year]) {
-      acc[publication.year] = [];
-    }
-
-    acc[publication.year].push(publication);
-    return acc;
-  }, {}),
-)
-  .sort(([leftYear], [rightYear]) => Number(rightYear) - Number(leftYear))
-  .map(([year, items]) => ({ year, items }));
 
 export default function ResearchPage() {
+  const { data: publications = [], isLoading, isError } = useGetPublicationsQuery();
+  const [sectionCopy, setSectionCopy] = useState<SettingsRecord["research"] | null>(null);
+
+  useEffect(() => {
+    let ignore = false;
+
+    const loadSettings = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/settings`, {
+          cache: "no-store",
+        });
+
+        if (!response.ok) {
+          return;
+        }
+
+        const data = (await response.json()) as SettingsRecord[];
+
+        if (!ignore && Array.isArray(data) && data.length > 0) {
+          setSectionCopy(data[0].research ?? null);
+        }
+      } catch {
+        if (!ignore) {
+          setSectionCopy(null);
+        }
+      }
+    };
+
+    void loadSettings();
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
+  const sectionTitle =
+    sectionCopy?.title?.trim() || "Publications and academic work.";
+
+  const sectionDescription =
+    sectionCopy?.description?.trim() ||
+    "A direct list of the research data we have, organized by year and kept intentionally minimal for easy reading.";
+
+  const archiveGroups: PublicationGroup[] = Object.entries(
+    publications.reduce<Record<string, typeof publications>>((acc, publication) => {
+      if (!acc[publication.year]) {
+        acc[publication.year] = [];
+      }
+
+      acc[publication.year].push(publication);
+      return acc;
+    }, {}),
+  )
+    .sort(([leftYear], [rightYear]) => Number(rightYear) - Number(leftYear))
+    .map(([year, items]) => ({ year, items }));
+
   return (
     <main className="overflow-hidden bg-background">
       <section className="relative overflow-hidden py-24 sm:py-28 lg:py-32">
@@ -138,16 +97,33 @@ export default function ResearchPage() {
             </p>
 
             <h1 className="mt-6 text-4xl font-semibold leading-[1.05] tracking-[-0.06em] text-foreground sm:text-5xl lg:text-6xl">
-              Publications and academic work.
+              {sectionTitle}
             </h1>
 
             <p className="mt-5 max-w-2xl text-sm leading-7 text-foreground/70 sm:text-base sm:leading-8">
-              A direct list of the research data we have, organized by year and
-              kept intentionally minimal for easy reading.
+              {sectionDescription}
             </p>
           </div>
 
           <div className="mt-14 space-y-8">
+            {isLoading ? (
+              <section className="rounded-[2.25rem] border border-border/70 bg-background/85 px-5 py-8 text-sm text-foreground/60 shadow-[0_18px_60px_-40px_rgba(15,23,42,0.2)] backdrop-blur sm:px-6">
+                Loading research publications...
+              </section>
+            ) : null}
+
+            {isError ? (
+              <section className="rounded-[2.25rem] border border-rose-200 bg-rose-50 px-5 py-8 text-sm text-rose-700 shadow-[0_18px_60px_-40px_rgba(15,23,42,0.2)] sm:px-6">
+                Failed to load research publications.
+              </section>
+            ) : null}
+
+            {!isLoading && !isError && archiveGroups.length === 0 ? (
+              <section className="rounded-[2.25rem] border border-border/70 bg-background/85 px-5 py-8 text-sm text-foreground/60 shadow-[0_18px_60px_-40px_rgba(15,23,42,0.2)] backdrop-blur sm:px-6">
+                No research publications found.
+              </section>
+            ) : null}
+
             {archiveGroups.map((group) => (
               <section
                 key={group.year}
@@ -171,7 +147,7 @@ export default function ResearchPage() {
                 <div className="divide-y divide-border/60">
                   {group.items.map((publication) => (
                     <article
-                      key={`${publication.year}-${publication.date}-${publication.title}`}
+                      key={publication._id}
                       className="grid gap-4 px-5 py-5 md:grid-cols-[110px_1fr_auto] md:items-start sm:px-6"
                     >
                       <div>
@@ -220,5 +196,5 @@ export default function ResearchPage() {
         </div>
       </section>
     </main>
-  );
+  )
 }

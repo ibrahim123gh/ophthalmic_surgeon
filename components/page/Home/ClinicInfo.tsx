@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import {
   ArrowUpRight,
@@ -6,40 +8,59 @@ import {
   MessageCircle,
   Phone,
 } from "lucide-react";
+import { useGetClinicSettingsQuery } from "@/lib/redux/api";
 
-const contactItems = [
-  {
-    title: "Main Hospital",
-    detail: "Clemenceau Medical Center (CMC), Beirut",
-    subdetail: "Available Monday till Thursday",
-    icon: MapPin,
-    iconColor: "text-primary",
-  },
-  {
-    title: "WhatsApp / SMS",
-    detail: "+961 81 778 142",
-    subdetail: "For appointments, please send an SMS or WhatsApp message",
-    icon: MessageCircle,
-    iconColor: "text-sky-500",
-  },
-  {
-    title: "Multiple Locations",
-    detail: "Beirut, Tripoli & Dubai",
-    subdetail: "Consultations across leading medical centers",
-    icon: Phone,
-    iconColor: "text-emerald-500",
-  },
-];
+const fallbackMapEmbed =
+  "https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d101812.71501028587!2d35.85930967678838!3d34.316036604901356!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m2!1sen!2slb!4v1778605300048!5m2!1sen!2slb";
 
-const hours = [
-  { day: "CMC Beirut", time: "Monday – Thursday" },
-  { day: "LAU Rizk / Makassed", time: "Wednesday" },
-  { day: "Rosary Sisters Hospital", time: "Thursday" },
-  { day: "Abyad Medical Center", time: "Saturday" },
-  { day: "CMC Dubai", time: "By appointment" },
-];
+const fallbackLocation = "Clemenceau Medical Center (CMC), Beirut";
+const fallbackWhatsApp = "+961 81 778 142";
 
 export default function ClinicInfo() {
+  const { data: clinicSettings } = useGetClinicSettingsQuery();
+  const latestSettings = clinicSettings?.[0];
+
+  const location = latestSettings?.location || fallbackLocation;
+  const whatsappNumber = latestSettings?.whatsappNumber || fallbackWhatsApp;
+  const phoneNumber = latestSettings?.phoneNumber || fallbackWhatsApp;
+  const workingHour = latestSettings?.workingHour || "Monday till Thursday";
+  const mapUrl = latestSettings?.mapUrl || fallbackMapEmbed;
+  const whatsappDigits = whatsappNumber.replace(/\D/g, "");
+  const phoneDigits = phoneNumber.replace(/\D/g, "");
+
+  const contactItems = [
+    {
+      title: "Main Hospital",
+      detail: location,
+      subdetail: workingHour,
+      icon: MapPin,
+      iconColor: "text-primary",
+    },
+    {
+      title: "WhatsApp / SMS",
+      detail: whatsappNumber,
+      subdetail:
+        "For appointments, please send an SMS or WhatsApp message",
+      icon: MessageCircle,
+      iconColor: "text-sky-500",
+    },
+    {
+      title: "Phone",
+      detail: phoneNumber,
+      subdetail: "Call the clinic during working hours",
+      icon: Phone,
+      iconColor: "text-emerald-500",
+    },
+  ];
+
+  const hours = [
+    { day: location, time: workingHour },
+    { day: "LAU Rizk / Makassed", time: "Wednesday" },
+    { day: "Rosary Sisters Hospital", time: "Thursday" },
+    { day: "Abyad Medical Center", time: "Saturday" },
+    { day: "CMC Dubai", time: "By appointment" },
+  ];
+
   return (
     <section className="relative overflow-hidden py-16 sm:py-20 lg:py-24">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(63,132,184,0.08),_transparent_32%),radial-gradient(circle_at_bottom_right,_rgba(56,189,248,0.06),_transparent_28%)]" />
@@ -77,7 +98,8 @@ export default function ClinicInfo() {
                 </div>
 
                 <p className="max-w-sm text-sm leading-6 text-foreground/60">
-                  Use the schedule below to choose the most convenient medical center before booking.
+                  Use the schedule below to choose the most convenient medical
+                  center before booking.
                 </p>
               </div>
 
@@ -150,7 +172,7 @@ export default function ClinicInfo() {
 
               <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                 <Link
-                  href="tel:+96181778142"
+                  href={`tel:${phoneDigits}`}
                   className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-[0_18px_40px_-24px_rgba(63,132,184,0.8)] transition hover:-translate-y-0.5 hover:opacity-95"
                 >
                   Call now
@@ -158,7 +180,7 @@ export default function ClinicInfo() {
                 </Link>
 
                 <Link
-                  href="https://wa.me/96181778142"
+                  href={`https://wa.me/${whatsappDigits}`}
                   className="inline-flex items-center justify-center gap-2 rounded-full border border-border bg-background/80 px-5 py-3 text-sm font-semibold text-foreground/80 transition hover:-translate-y-0.5 hover:border-primary/40 hover:text-primary"
                 >
                   WhatsApp us
@@ -180,7 +202,7 @@ export default function ClinicInfo() {
               </div>
 
               <Link
-                href="https://www.google.com/maps"
+                href={latestSettings?.mapUrl || "https://www.google.com/maps"}
                 className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-primary transition hover:-translate-y-0.5"
               >
                 Open maps
@@ -194,7 +216,7 @@ export default function ClinicInfo() {
               </div>
 
               <iframe
-                src="https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d101812.71501028587!2d35.85930967678838!3d34.316036604901356!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2slb!4v1778605300048!5m2!1sen!2slb"
+                src={mapUrl}
                 title="Clinic location map"
                 loading="lazy"
                 className="absolute inset-0 h-full w-full border-0"
@@ -207,7 +229,7 @@ export default function ClinicInfo() {
                       Clinic address
                     </p>
                     <p className="mt-1 text-sm font-semibold text-foreground">
-                      Clemenceau Medical Center (CMC), Beirut
+                      {location}
                     </p>
                   </div>
 

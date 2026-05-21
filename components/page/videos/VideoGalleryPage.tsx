@@ -1,41 +1,53 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, Play, Sparkles, Video } from "lucide-react";
 
-const videos = Array.from({ length: 17 }, (_, i) => {
-  const index = i + 1;
-  const spotlight = index === 1;
+type VideoEntry = {
+  _id?: string;
+  id?: string;
+  title: string;
+  description: string;
+  category?: string;
+  video: string;
+  order?: number;
+};
 
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5000/api/v1";
+
+function resolveVideoUrl(videoPath: string) {
+  if (!videoPath) {
+    return "";
+  }
+
+  if (/^https?:\/\//i.test(videoPath)) {
+    return videoPath;
+  }
+
+  const origin = new URL(API_BASE_URL).origin;
+  return `${origin}${videoPath.startsWith("/") ? videoPath : `/${videoPath}`}`;
+}
+
+function mapVideo(entry: VideoEntry) {
   return {
-    title: spotlight ? "Clinic introduction" : `Clinic video ${index}`,
-    src: `/video/video${index}.mp4`,
-    category:
-      index <= 4
-        ? "Patient care"
-        : index <= 8
-          ? "Treatment room"
-          : index <= 12
-            ? "Equipment"
-            : "Consultation",
-    summary:
-      index === 1
-        ? "A calm introduction to the clinic, the medical team, and the patient-first experience."
-        : "A short visual glimpse into modern ophthalmology care and the clinic environment.",
+    _id: entry._id ?? entry.id ?? "",
+    title: entry.title,
+    src: resolveVideoUrl(entry.video),
+    category: entry.category || "Clinic",
+    summary: entry.description,
+    order: entry.order ?? 0,
   };
-});
-
-const stats = [
-  { value: "17", label: "Curated clips" },
-  { value: "4", label: "Care categories" },
-  { value: "1", label: "Featured story" },
-];
+}
 
 export default function VideoGalleryPage() {
-  const [activeVideo, setActiveVideo] = useState(videos[0]);
+  const [videos, setVideos] = useState<ReturnType<typeof mapVideo>[]>([]);
+  const [activeVideoId, setActiveVideoId] = useState<string | null>(null);
   const [isVisible, setIsVisible] = useState(false);
   const [featuredAnimKey, setFeaturedAnimKey] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const enterFrame = window.requestAnimationFrame(() => setIsVisible(true));
@@ -44,12 +56,88 @@ export default function VideoGalleryPage() {
   }, []);
 
   useEffect(() => {
+    let ignore = false;
+
+    const loadVideos = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/videos`, {
+          cache: "no-store",
+        });
+
+        const data = (await response.json()) as VideoEntry[] | { message?: string };
+
+        if (!response.ok) {
+          throw new Error(
+            "message" in data
+              ? data.message ?? "Failed to load videos"
+              : "Failed to load videos",
+          );
+        }
+
+        const nextVideos = (Array.isArray(data) ? data : [])
+          .map(mapVideo)
+          .filter((video) => video._id && video.src)
+          .sort((left, right) => left.order - right.order);
+
+        if (!ignore) {
+          setVideos(nextVideos);
+          setActiveVideoId((current) => current ?? nextVideos[0]?._id ?? null);
+        }
+      } catch (requestError) {
+        if (!ignore) {
+          setError(
+            requestError instanceof Error
+              ? requestError.message
+              : "Failed to load videos",
+          );
+        }
+      } finally {
+        if (!ignore) {
+          setLoading(false);
+        }
+      }
+    };
+
+    void loadVideos();
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
+  const activeVideo = useMemo(
+    () => videos.find((video) => video._id === activeVideoId) ?? videos[0] ?? null,
+    [videos, activeVideoId],
+  );
+
+  const stats = useMemo(() => {
+    const categories = new Set(
+      videos.map((video) => video.category).filter(Boolean),
+    );
+
+    return [
+      { value: String(videos.length).padStart(2, "0"), label: "Published clips" },
+      { value: String(categories.size).padStart(2, "0"), label: "Care categories" },
+      { value: activeVideo ? "01" : "00", label: "Featured story" },
+    ];
+  }, [videos, activeVideo]);
+
+  useEffect(() => {
+    if (!activeVideo && videos.length > 0) {
+      setActiveVideoId(videos[0]._id);
+    }
+  }, [activeVideo, videos]);
+
+  useEffect(() => {
     const enterFrame = window.requestAnimationFrame(() =>
       setFeaturedAnimKey((current) => current + 1),
     );
 
     return () => window.cancelAnimationFrame(enterFrame);
-  }, [activeVideo.src]);
+  }, [activeVideo?.src]);
 
   return (
     <main className="relative overflow-hidden bg-background">
@@ -129,7 +217,7 @@ export default function VideoGalleryPage() {
                     Featured clip
                   </p>
                   <h2 className="mt-1 text-base font-semibold tracking-[-0.03em] text-foreground sm:text-xl">
-                    {activeVideo.title}
+                    {activeVideo?.title ?? "No video available"}
                   </h2>
                 </div>
                 <span className="inline-flex w-fit items-center gap-2 rounded-full border border-primary/15 bg-primary/10 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary sm:text-xs">
@@ -143,37 +231,52 @@ export default function VideoGalleryPage() {
                   key={featuredAnimKey}
                   className="soft-rise relative overflow-hidden rounded-[1.6rem] border border-border/70 bg-surface/80 sm:rounded-[1.8rem]"
                 >
-                  <video
-                    key={activeVideo.src}
-                    src={activeVideo.src}
-                    className="aspect-[16/10] w-full object-cover sm:aspect-[21/8.8] sm:object-contain"
-                    muted
-                    playsInline
-                    controls
-                    preload="metadata"
-                  />
+                  {activeVideo ? (
+                    <>
+                      <video
+                        key={activeVideo.src}
+                        src={activeVideo.src}
+                        className="aspect-[16/10] w-full object-cover sm:aspect-[21/8.8] sm:object-contain"
+                        muted
+                        playsInline
+                        controls
+                        preload="metadata"
+                      />
 
-                  <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_top,rgba(15,23,42,0.32)_0%,rgba(15,23,42,0)_34%)]" />
+                      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_top,rgba(15,23,42,0.32)_0%,rgba(15,23,42,0)_34%)]" />
 
-                  <div className="absolute left-3 top-3 inline-flex items-center gap-2 rounded-full bg-background/90 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground shadow-[0_14px_30px_-20px_rgba(15,23,42,0.35)] backdrop-blur sm:left-4 sm:top-4 sm:text-xs sm:tracking-[0.18em]">
-                    <Play size={14} className="text-primary" />
-                    Watch intro
-                  </div>
+                      <div className="absolute left-3 top-3 inline-flex items-center gap-2 rounded-full bg-background/90 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground shadow-[0_14px_30px_-20px_rgba(15,23,42,0.35)] backdrop-blur sm:left-4 sm:top-4 sm:text-xs sm:tracking-[0.18em]">
+                        <Play size={14} className="text-primary" />
+                        Watch intro
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex aspect-[16/10] items-center justify-center px-6 text-center text-sm text-foreground/60 sm:aspect-[21/8.8]">
+                      {loading ? "Loading videos..." : "No videos have been uploaded yet."}
+                    </div>
+                  )}
                 </div>
 
                 <div className="mt-5 grid gap-4 lg:grid-cols-[1fr_auto] lg:items-end">
                   <div>
                     <div className="flex flex-wrap gap-2">
-                      <span className="rounded-full border border-border/70 bg-surface px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-foreground/65">
-                        {activeVideo.category}
-                      </span>
-                      <span className="rounded-full border border-border/70 bg-surface px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-foreground/65">
-                        Clinic overview
-                      </span>
+                      {activeVideo ? (
+                        <>
+                          <span className="rounded-full border border-border/70 bg-surface px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-foreground/65">
+                            {activeVideo.category}
+                          </span>
+                          <span className="rounded-full border border-border/70 bg-surface px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-foreground/65">
+                            Clinic overview
+                          </span>
+                        </>
+                      ) : null}
                     </div>
 
                     <p className="mt-4 max-w-2xl text-sm leading-7 text-foreground/68">
-                      {activeVideo.summary}
+                      {error
+                        ? error
+                        : activeVideo?.summary ??
+                          "Uploaded videos will appear here once they are added in the CMS."}
                     </p>
                   </div>
 
@@ -212,11 +315,11 @@ export default function VideoGalleryPage() {
             <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {videos.map((video, index) => (
                 <button
-                  key={video.src}
+                  key={video._id}
                   type="button"
-                  onClick={() => setActiveVideo(video)}
+                  onClick={() => setActiveVideoId(video._id)}
                   className={`group overflow-hidden rounded-[1.7rem] border bg-background/85 text-left shadow-[0_18px_60px_-44px_rgba(15,23,42,0.34)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_24px_70px_-44px_rgba(63,132,184,0.18)] ${
-                    activeVideo.src === video.src
+                    activeVideo?.src === video.src
                       ? "border-primary/40 ring-2 ring-primary/20"
                       : "border-border/70 hover:border-primary/30"
                   }`}
@@ -253,6 +356,12 @@ export default function VideoGalleryPage() {
                 </button>
               ))}
             </div>
+
+            {!loading && videos.length === 0 ? (
+              <p className="mt-6 text-sm text-foreground/60">
+                No videos were returned from the CMS yet.
+              </p>
+            ) : null}
           </div>
         </div>
       </section>
