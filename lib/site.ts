@@ -1,4 +1,4 @@
-const DEFAULT_SITE_URL = "https://api.drbachirabiad.com/api/v1";
+const DEFAULT_SITE_URL = "https://drbachirabiad.com";
 
 export function getSiteUrl() {
   const rawSiteUrl =
