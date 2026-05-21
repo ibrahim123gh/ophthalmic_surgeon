@@ -6,6 +6,7 @@ import ThemeProvider from "@/components/theme/ThemeProvider";
 import Footer from "@/components/layout/Footer";
 import ReduxProvider from "@/components/providers/ReduxProvider";
 import { getSeoBySlug, seoToMetadata } from "@/lib/seo";
+import { getSiteUrl } from "@/lib/site";
 
 const playfairDisplay = Playfair_Display({
   subsets: ["latin"],
@@ -17,11 +18,14 @@ const playfairDisplay = Playfair_Display({
 export async function generateMetadata(): Promise<Metadata> {
   const seo = await getSeoBySlug("home");
 
-  return seoToMetadata(seo, {
-    title: "Dr. Bachir Abiad",
-    description: "Dr. Bachir Abiad ophthalmology clinic website.",
-    keywords: ["ophthalmology", "clinic"],
-  });
+  return {
+    ...seoToMetadata(seo, {
+      title: "Dr. Bachir Abiad",
+      description: "Dr. Bachir Abiad ophthalmology clinic website.",
+      keywords: ["ophthalmology", "clinic"],
+    }),
+    metadataBase: new URL(getSiteUrl()),
+  };
 }
 
 export default function RootLayout({
