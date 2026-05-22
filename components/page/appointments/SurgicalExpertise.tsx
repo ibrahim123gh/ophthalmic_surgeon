@@ -4,12 +4,43 @@ import { useEffect, useRef, useState } from "react";
 
 import { LuEye, LuScanEye, LuShieldCheck, LuSparkles } from "react-icons/lu";
 
-const surgeryGroups = [
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5000/api/v1";
+
+type SurgicalExpertiseItem = {
+  title: string;
+};
+
+type SurgicalExpertiseEntry = {
+  _id: string;
+  title: string;
+  description: string;
+  icon: string;
+  orderNumber?: number;
+  data?: SurgicalExpertiseItem[];
+};
+
+type SurgicalExpertiseGroup = {
+  title: string;
+  summary: string;
+  icon: "eye" | "scan-eye" | "shield-check";
+  accent: string;
+  items: string[];
+};
+
+type SettingsRecord = {
+  SurgicalExpertise?: {
+    title?: string;
+    description?: string;
+  };
+};
+
+const fallbackGroups: SurgicalExpertiseGroup[] = [
   {
     title: "Corneal Transplantation",
     summary:
       "Full-thickness and lamellar corneal procedures for advanced corneal disease.",
-    icon: LuScanEye,
+    icon: "scan-eye",
     accent: "from-sky-400 via-primary to-cyan-200",
     items: ["PKP", "DALK", "DSAEK", "Ultra-thin DSAEK", "Nano-thin DSAEK", "DMEK"],
   },
@@ -17,7 +48,7 @@ const surgeryGroups = [
     title: "Cataract & Reconstruction",
     summary:
       "Complex cataract surgery with anterior segment reconstruction and lens support.",
-    icon: LuShieldCheck,
+    icon: "shield-check",
     accent: "from-primary via-sky-300 to-cyan-200",
     items: [
       "Complex cataract surgery",
@@ -29,23 +60,89 @@ const surgeryGroups = [
     title: "Refractive Surgery",
     summary:
       "Vision correction options selected to match the cornea and the visual goal.",
-    icon: LuEye,
+    icon: "eye",
     accent: "from-cyan-400 via-sky-300 to-primary",
-    items: [
-      "PRK",
-      "Femto-LASIK",
-      "SMILE",
-      "CLEAR",
-      "Cross-linking",
-      "ICL",
-      "Intra-stromal rings",
-    ],
+    items: ["PRK", "Femto-LASIK", "SMILE", "CLEAR", "Cross-linking", "ICL", "Intra-stromal rings"],
   },
-] as const;
+];
+
+const iconMap = {
+  eye: LuEye,
+  "scan-eye": LuScanEye,
+  "shield-check": LuShieldCheck,
+} as const;
+
+const accentMap = [
+  "from-sky-400 via-primary to-cyan-200",
+  "from-primary via-sky-300 to-cyan-200",
+  "from-cyan-400 via-sky-300 to-primary",
+];
+
+const normalizeIcon = (icon: string): SurgicalExpertiseGroup["icon"] => {
+  if (icon in iconMap) {
+    return icon as SurgicalExpertiseGroup["icon"];
+  }
+
+  return "eye";
+};
 
 export default function SurgicalExpertise() {
   const sectionRef = useRef<HTMLElement>(null);
   const [isVisible, setIsVisible] = useState(false);
+  const [groups, setGroups] = useState<SurgicalExpertiseGroup[]>(fallbackGroups);
+  const [sectionCopy, setSectionCopy] = useState<SettingsRecord["SurgicalExpertise"] | null>(null);
+
+  useEffect(() => {
+    let ignore = false;
+
+    const loadSurgicalExpertise = async () => {
+      try {
+        const [expertiseResponse, settingsResponse] = await Promise.all([
+          fetch(`${API_BASE_URL}/surgical-expertise`, { cache: "no-store" }),
+          fetch(`${API_BASE_URL}/settings`, { cache: "no-store" }),
+        ]);
+
+        if (expertiseResponse.ok) {
+          const data = (await expertiseResponse.json()) as SurgicalExpertiseEntry[];
+
+          if (!ignore && Array.isArray(data) && data.length > 0) {
+            setGroups(
+              data
+                .slice()
+                .sort((left, right) => (left.orderNumber ?? 0) - (right.orderNumber ?? 0))
+                .map((item, index) => ({
+                  title: item.title,
+                  summary: item.description,
+                  icon: normalizeIcon(item.icon),
+                  accent: accentMap[index % accentMap.length],
+                  items: (item.data ?? [])
+                    .map((row) => row.title?.trim())
+                    .filter((value): value is string => Boolean(value)),
+                })),
+            );
+          }
+        }
+
+        if (settingsResponse.ok) {
+          const settings = (await settingsResponse.json()) as SettingsRecord[];
+          if (!ignore && Array.isArray(settings) && settings.length > 0) {
+            setSectionCopy(settings[0].SurgicalExpertise ?? null);
+          }
+        }
+      } catch {
+        if (!ignore) {
+          setGroups(fallbackGroups);
+          setSectionCopy(null);
+        }
+      }
+    };
+
+    void loadSurgicalExpertise();
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   useEffect(() => {
     const section = sectionRef.current;
@@ -94,22 +191,21 @@ export default function SurgicalExpertise() {
           </span>
 
           <h2 className="mt-5 text-3xl font-semibold leading-tight tracking-[-0.05em] text-foreground sm:text-4xl lg:text-5xl">
-            Specialized procedures in cornea, cataract, and refractive surgery.
+            {sectionCopy?.title?.trim() || "Specialized procedures in cornea, cataract, and refractive surgery."}
           </h2>
 
-          <p className="mt-4 text-sm leading-7 text-foreground/70 sm:text-base">
-            A clean overview of the surgical domains, organized to stay readable
-            and professional at every screen size.
+          <p className="mt-4 text-base leading-7 text-foreground/72 sm:text-lg">
+            {sectionCopy?.description?.trim() || "A clean overview of the surgical domains, organized to stay readable and professional at every screen size."}
           </p>
         </div>
 
         <div className="mt-12 grid gap-5 lg:grid-cols-3">
-          {surgeryGroups.map((group, index) => {
-            const Icon = group.icon;
+          {groups.map((group, index) => {
+            const Icon = iconMap[group.icon];
 
             return (
               <article
-                key={group.title}
+                key={`${group.title}-${index}`}
                 className={`group relative overflow-hidden rounded-[2rem] border border-border/70 bg-background/85 shadow-[0_18px_60px_-38px_rgba(15,23,42,0.24)] backdrop-blur transition-all duration-700 ease-out motion-reduce:transform-none motion-reduce:transition-none motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-[0_24px_70px_-42px_rgba(63,132,184,0.18)] ${
                   isVisible
                     ? "translate-y-0 opacity-100"

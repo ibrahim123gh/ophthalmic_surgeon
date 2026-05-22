@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { LuCalendarDays, LuFileText } from "react-icons/lu";
+import ClinicSchedule from "@/components/page/Home/ClinicSchedule";
 import { useGetPublicationsQuery } from "@/lib/redux/api";
 
 const API_BASE_URL =
@@ -124,9 +125,9 @@ export default function ResearchPage() {
               </section>
             ) : null}
 
-            {archiveGroups.map((group) => (
-              <section
-                key={group.year}
+          {archiveGroups.map((group) => (
+            <section
+              key={group.year}
                 className="overflow-hidden rounded-[2.25rem] border border-border/70 bg-background/85 shadow-[0_18px_60px_-40px_rgba(15,23,42,0.2)] backdrop-blur"
               >
                 <div className="flex items-center justify-between gap-4 border-b border-border/70 px-5 py-4 sm:px-6">

@@ -38,7 +38,7 @@ export default function Footer() {
 
   const contactLinks = [
     {
-      label: "WhatsApp / SMS",
+      label: "WhatsApp",
       value: whatsappNumber,
       href: `https://wa.me/${whatsappNumber.replace(/\D/g, "")}`,
       icon: Phone,

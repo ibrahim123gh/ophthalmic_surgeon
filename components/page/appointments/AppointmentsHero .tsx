@@ -1,9 +1,100 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import type { MouseEvent } from "react";
 import Link from "next/link";
 import { LuArrowRight, LuCalendarDays, LuSparkles } from "react-icons/lu";
 
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5000/api/v1";
+
+type SettingsRecord = {
+  AppointmentsSurgicalCare?: {
+    title?: string;
+    description?: string;
+  };
+};
+
 export default function AppointmentsHero() {
+  const [sectionCopy, setSectionCopy] = useState<SettingsRecord["AppointmentsSurgicalCare"] | null>(null);
+
+  const scrollToSection = (event: MouseEvent<HTMLAnchorElement>, id: string) => {
+    event.preventDefault();
+
+    const target = document.getElementById(id);
+    if (!target) {
+      return;
+    }
+
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const targetY = Math.max(0, target.getBoundingClientRect().top + window.scrollY - 96);
+
+    if (prefersReducedMotion) {
+      window.scrollTo(0, targetY);
+      return;
+    }
+
+    const startY = window.scrollY;
+    const distance = targetY - startY;
+    const duration = 1200;
+    let startTime: number | null = null;
+
+    const easeInOutCubic = (value: number) =>
+      value < 0.5
+        ? 4 * value * value * value
+        : 1 - Math.pow(-2 * value + 2, 3) / 2;
+
+    const animateScroll = (timestamp: number) => {
+      if (startTime === null) {
+        startTime = timestamp;
+      }
+
+      const elapsed = timestamp - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const nextY = startY + distance * easeInOutCubic(progress);
+
+      window.scrollTo(0, nextY);
+
+      if (progress < 1) {
+        window.requestAnimationFrame(animateScroll);
+      }
+    };
+
+    window.requestAnimationFrame(animateScroll);
+  };
+
+  useEffect(() => {
+    let ignore = false;
+
+    const loadSettings = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/settings`, {
+          cache: "no-store",
+        });
+
+        if (!response.ok) {
+          return;
+        }
+
+        const data = (await response.json()) as SettingsRecord[];
+
+        if (!ignore && Array.isArray(data) && data.length > 0) {
+          setSectionCopy(data[0].AppointmentsSurgicalCare ?? null);
+        }
+      } catch {
+        if (!ignore) {
+          setSectionCopy(null);
+        }
+      }
+    };
+
+    void loadSettings();
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
   return (
     <section className="relative overflow-hidden py-24 sm:py-28">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(63,132,184,0.14),_transparent_42%)]" />
@@ -15,18 +106,17 @@ export default function AppointmentsHero() {
         </span>
 
         <h1 className="mx-auto mt-6 max-w-5xl text-4xl font-semibold leading-[1.05] tracking-[-0.05em] text-foreground sm:text-5xl lg:text-6xl">
-          International ophthalmology expertise with advanced surgical care.
+          {sectionCopy?.title?.trim() || "International ophthalmology expertise with advanced surgical care."}
         </h1>
 
         <p className="mx-auto mt-6 max-w-3xl text-base leading-8 text-foreground/70 sm:text-lg">
-          Dr. Bachir Abiad provides specialized eye care across leading medical
-          centers in Lebanon and the Gulf region, with expertise in cornea,
-          cataract, and refractive surgery.
+          {sectionCopy?.description?.trim() || "Dr. Bachir Abiad provides specialized eye care across leading medical centers in Lebanon and the Gulf region, with expertise in cornea, cataract, and refractive surgery."}
         </p>
 
         <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
           <Link
             href="#booking"
+            onClick={(event) => scrollToSection(event, "booking")}
             className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3.5 text-sm font-semibold text-primary-foreground shadow-[0_18px_40px_-24px_rgba(63,132,184,0.9)] transition hover:-translate-y-0.5"
           >
             Book Appointment
@@ -35,6 +125,7 @@ export default function AppointmentsHero() {
 
           <Link
             href="#availability"
+            onClick={(event) => scrollToSection(event, "availability")}
             className="inline-flex items-center gap-2 rounded-full border border-border bg-background/70 px-6 py-3.5 text-sm font-semibold text-foreground/80 shadow-sm transition hover:border-primary/40 hover:text-primary"
           >
             <LuCalendarDays size={16} />

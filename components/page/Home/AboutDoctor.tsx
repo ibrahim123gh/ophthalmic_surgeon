@@ -17,13 +17,17 @@ type AboutSection = {
 };
 
 type SettingsRecord = {
+  whatsappNumber?: string;
   aboutSection?: AboutSection;
 };
+
+const fallbackWhatsApp = "+961 81 778 142";
 
 export default function AboutDoctor() {
   const sectionRef = useRef<HTMLElement>(null);
   const [isVisible, setIsVisible] = useState(false);
   const [aboutSection, setAboutSection] = useState<AboutSection | null>(null);
+  const [whatsappNumber, setWhatsappNumber] = useState(fallbackWhatsApp);
 
   useEffect(() => {
     let ignore = false;
@@ -42,10 +46,12 @@ export default function AboutDoctor() {
 
         if (!ignore && Array.isArray(data) && data.length > 0) {
           setAboutSection(data[0].aboutSection ?? null);
+          setWhatsappNumber(data[0].whatsappNumber?.trim() || fallbackWhatsApp);
         }
       } catch {
         if (!ignore) {
           setAboutSection(null);
+          setWhatsappNumber(fallbackWhatsApp);
         }
       }
     };
@@ -101,6 +107,8 @@ export default function AboutDoctor() {
   const profileHighlight =
     aboutSection?.profileHiglight?.trim() ||
     "Trusted surgical care with calm, precise follow-up.";
+  const whatsappDigits = whatsappNumber.replace(/\D/g, "");
+  const whatsappHref = `https://wa.me/${whatsappDigits}`;
 
   return (
     <section
@@ -191,10 +199,12 @@ export default function AboutDoctor() {
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
               <Link
-                href="#"
+                href={whatsappHref}
+                target="_blank"
+                rel="noreferrer"
                 className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-6 py-3.5 text-sm font-semibold text-primary-foreground shadow-[0_18px_40px_-24px_rgba(63,132,184,0.85)] transition hover:-translate-y-0.5 hover:opacity-95"
               >
-                Read full About page
+                Online Consultation
                 <LuArrowRight size={16} />
               </Link>
 

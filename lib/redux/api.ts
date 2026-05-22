@@ -9,7 +9,7 @@ export type ClinicSettings = {
   email?: string;
   location?: string;
   mapUrl?: string;
-  workingHour?: string;
+  workingHour?: { city?: string; day?: string }[] | string;
   instagram?: string;
   facebook?: string;
   twiter?: string;

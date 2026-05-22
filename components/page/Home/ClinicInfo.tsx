@@ -6,7 +6,6 @@ import {
   Clock3,
   MapPin,
   MessageCircle,
-  Phone,
 } from "lucide-react";
 import { useGetClinicSettingsQuery } from "@/lib/redux/api";
 
@@ -23,7 +22,17 @@ export default function ClinicInfo() {
   const location = latestSettings?.location || fallbackLocation;
   const whatsappNumber = latestSettings?.whatsappNumber || fallbackWhatsApp;
   const phoneNumber = latestSettings?.phoneNumber || fallbackWhatsApp;
-  const workingHour = latestSettings?.workingHour || "Monday till Thursday";
+  const workingHourItems = Array.isArray(latestSettings?.workingHour)
+    ? latestSettings.workingHour
+    : typeof latestSettings?.workingHour === "string" && latestSettings.workingHour.trim().length > 0
+      ? [{ city: "", day: latestSettings.workingHour }]
+      : [];
+  const workingHourSummary =
+    workingHourItems.length > 0
+      ? workingHourItems
+          .map((item) => [item.city, item.day].filter(Boolean).join(" - "))
+          .join(", ")
+      : "Monday till Thursday";
   const mapUrl = latestSettings?.mapUrl || fallbackMapEmbed;
   const whatsappDigits = whatsappNumber.replace(/\D/g, "");
   const phoneDigits = phoneNumber.replace(/\D/g, "");
@@ -32,34 +41,31 @@ export default function ClinicInfo() {
     {
       title: "Main Hospital",
       detail: location,
-      subdetail: workingHour,
+      subdetail: workingHourSummary,
       icon: MapPin,
       iconColor: "text-primary",
     },
     {
-      title: "WhatsApp / SMS",
+      title: "WhatsApp",
       detail: whatsappNumber,
-      subdetail:
-        "For appointments, please send an SMS or WhatsApp message",
+      subdetail: "For appointments, please send an SMS or WhatsApp message",
       icon: MessageCircle,
       iconColor: "text-sky-500",
     },
-    {
-      title: "Phone",
-      detail: phoneNumber,
-      subdetail: "Call the clinic during working hours",
-      icon: Phone,
-      iconColor: "text-emerald-500",
-    },
   ];
 
-  const hours = [
-    { day: location, time: workingHour },
-    { day: "LAU Rizk / Makassed", time: "Wednesday" },
-    { day: "Rosary Sisters Hospital", time: "Thursday" },
-    { day: "Abyad Medical Center", time: "Saturday" },
-    { day: "CMC Dubai", time: "By appointment" },
-  ];
+  const hours =
+    workingHourItems.length > 0
+      ? workingHourItems.map((item, index) => ({
+          day: item.city || `Schedule ${index + 1}`,
+          time: item.day || "Open",
+        }))
+      : [
+          { day: "LAU Rizk / Makassed", time: "Wednesday" },
+          { day: "Rosary Sisters Hospital", time: "Thursday" },
+          { day: "Abyad Medical Center", time: "Saturday" },
+          { day: "CMC Dubai", time: "By appointment" },
+        ];
 
   return (
     <section className="relative overflow-hidden py-16 sm:py-20 lg:py-24">
@@ -150,9 +156,9 @@ export default function ClinicInfo() {
                 </div>
 
                 <div className="grid gap-2 text-sm">
-                  {hours.map((item) => (
+                  {hours.map((item, index) => (
                     <div
-                      key={item.day}
+                      key={`${item.day}-${index}`}
                       className="flex items-center justify-between gap-4 rounded-2xl bg-background/80 px-3 py-2 text-foreground sm:gap-6"
                     >
                       <span className="text-foreground/65">{item.day}</span>
@@ -171,14 +177,6 @@ export default function ClinicInfo() {
               </div>
 
               <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-                <Link
-                  href={`tel:${phoneDigits}`}
-                  className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-[0_18px_40px_-24px_rgba(63,132,184,0.8)] transition hover:-translate-y-0.5 hover:opacity-95"
-                >
-                  Call now
-                  <ArrowUpRight size={16} />
-                </Link>
-
                 <Link
                   href={`https://wa.me/${whatsappDigits}`}
                   className="inline-flex items-center justify-center gap-2 rounded-full border border-border bg-background/80 px-5 py-3 text-sm font-semibold text-foreground/80 transition hover:-translate-y-0.5 hover:border-primary/40 hover:text-primary"
