@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { LuEye, LuScanEye, LuShieldCheck, LuSparkles } from "react-icons/lu";
+import { useClinicSettings } from "@/lib/redux/useClinicSettings";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5000/api/v1";
@@ -26,13 +27,6 @@ type SurgicalExpertiseGroup = {
   icon: "eye" | "scan-eye" | "shield-check";
   accent: string;
   items: string[];
-};
-
-type SettingsRecord = {
-  SurgicalExpertise?: {
-    title?: string;
-    description?: string;
-  };
 };
 
 const fallbackGroups: SurgicalExpertiseGroup[] = [
@@ -90,20 +84,18 @@ export default function SurgicalExpertise() {
   const sectionRef = useRef<HTMLElement>(null);
   const [isVisible, setIsVisible] = useState(false);
   const [groups, setGroups] = useState<SurgicalExpertiseGroup[]>(fallbackGroups);
-  const [sectionCopy, setSectionCopy] = useState<SettingsRecord["SurgicalExpertise"] | null>(null);
+  const { clinicSettings } = useClinicSettings();
+  const sectionCopy = clinicSettings?.SurgicalExpertise ?? null;
 
   useEffect(() => {
     let ignore = false;
 
     const loadSurgicalExpertise = async () => {
       try {
-        const [expertiseResponse, settingsResponse] = await Promise.all([
-          fetch(`${API_BASE_URL}/surgical-expertise`, { cache: "no-store" }),
-          fetch(`${API_BASE_URL}/settings`, { cache: "no-store" }),
-        ]);
+        const response = await fetch(`${API_BASE_URL}/surgical-expertise`, { cache: "no-store" });
 
-        if (expertiseResponse.ok) {
-          const data = (await expertiseResponse.json()) as SurgicalExpertiseEntry[];
+        if (response.ok) {
+          const data = (await response.json()) as SurgicalExpertiseEntry[];
 
           if (!ignore && Array.isArray(data) && data.length > 0) {
             setGroups(
@@ -122,17 +114,9 @@ export default function SurgicalExpertise() {
             );
           }
         }
-
-        if (settingsResponse.ok) {
-          const settings = (await settingsResponse.json()) as SettingsRecord[];
-          if (!ignore && Array.isArray(settings) && settings.length > 0) {
-            setSectionCopy(settings[0].SurgicalExpertise ?? null);
-          }
-        }
       } catch {
         if (!ignore) {
           setGroups(fallbackGroups);
-          setSectionCopy(null);
         }
       }
     };

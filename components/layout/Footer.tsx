@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Mail, MapPin, Phone } from "lucide-react";
 import { FaFacebookF, FaInstagram, FaYoutube } from "react-icons/fa6";
-import { useGetClinicSettingsQuery } from "@/lib/redux/api";
+import { useClinicSettings } from "@/lib/redux/useClinicSettings";
 
 const quickLinks = [
   { label: "Home", href: "/" },
@@ -14,8 +14,7 @@ const quickLinks = [
 ];
 
 export default function Footer() {
-  const { data: clinicSettings } = useGetClinicSettingsQuery();
-  const latestSettings = clinicSettings?.[0];
+  const { clinicSettings: latestSettings } = useClinicSettings();
 
   const whatsappNumber = latestSettings?.whatsappNumber || "+961 81 778 142";
   const phoneNumber = latestSettings?.phoneNumber || "+961 81 778 142";

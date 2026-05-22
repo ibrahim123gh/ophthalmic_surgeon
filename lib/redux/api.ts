@@ -57,12 +57,8 @@ export const api = createApi({
       return headers;
     },
   }),
-  tagTypes: ["ClinicSettings", "Publications"],
+  tagTypes: ["Publications"],
   endpoints: (builder) => ({
-    getClinicSettings: builder.query<ClinicSettings[], void>({
-      query: () => "/settings",
-      providesTags: ["ClinicSettings"],
-    }),
     getPublications: builder.query<Publication[], void>({
       query: () => "/publications",
       providesTags: ["Publications"],
@@ -70,4 +66,4 @@ export const api = createApi({
   }),
 });
 
-export const { useGetClinicSettingsQuery, useGetPublicationsQuery } = api;
+export const { useGetPublicationsQuery } = api;

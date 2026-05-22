@@ -5,63 +5,31 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { LuArrowRight, LuCircleCheck, LuSparkles } from "react-icons/lu";
-
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5000/api/v1";
-
-type AboutSection = {
-  title?: string;
-  description?: string;
-  core?: { title?: string }[];
-  profileHiglight?: string;
-};
-
-type SettingsRecord = {
-  whatsappNumber?: string;
-  aboutSection?: AboutSection;
-};
+import { useClinicSettings } from "@/lib/redux/useClinicSettings";
 
 const fallbackWhatsApp = "+961 81 778 142";
+
+function resolveAboutImageUrl(image?: string | null) {
+  if (!image) {
+    return "";
+  }
+
+  if (/^https?:\/\//i.test(image)) {
+    return image;
+  }
+
+  const assetsBase = process.env.NEXT_PUBLIC_API_BASE_URL_IMAGE?.replace(/\/$/, "");
+  const normalizedPath = image.startsWith("/") ? image : `/${image}`;
+
+  return assetsBase ? `${assetsBase}${normalizedPath}` : normalizedPath;
+}
 
 export default function AboutDoctor() {
   const sectionRef = useRef<HTMLElement>(null);
   const [isVisible, setIsVisible] = useState(false);
-  const [aboutSection, setAboutSection] = useState<AboutSection | null>(null);
-  const [whatsappNumber, setWhatsappNumber] = useState(fallbackWhatsApp);
-
-  useEffect(() => {
-    let ignore = false;
-
-    const loadSettings = async () => {
-      try {
-        const response = await fetch(`${API_BASE_URL}/settings`, {
-          cache: "no-store",
-        });
-
-        if (!response.ok) {
-          return;
-        }
-
-        const data = (await response.json()) as SettingsRecord[];
-
-        if (!ignore && Array.isArray(data) && data.length > 0) {
-          setAboutSection(data[0].aboutSection ?? null);
-          setWhatsappNumber(data[0].whatsappNumber?.trim() || fallbackWhatsApp);
-        }
-      } catch {
-        if (!ignore) {
-          setAboutSection(null);
-          setWhatsappNumber(fallbackWhatsApp);
-        }
-      }
-    };
-
-    void loadSettings();
-
-    return () => {
-      ignore = true;
-    };
-  }, []);
+  const { clinicSettings } = useClinicSettings();
+  const aboutSection = clinicSettings?.aboutSection ?? null;
+  const whatsappNumber = clinicSettings?.whatsappNumber?.trim() || fallbackWhatsApp;
 
   useEffect(() => {
     const section = sectionRef.current;
@@ -107,6 +75,7 @@ export default function AboutDoctor() {
   const profileHighlight =
     aboutSection?.profileHiglight?.trim() ||
     "Trusted surgical care with calm, precise follow-up.";
+  const aboutImageSrc = resolveAboutImageUrl(aboutSection?.image?.trim());
   const whatsappDigits = whatsappNumber.replace(/\D/g, "");
   const whatsappHref = `https://wa.me/${whatsappDigits}`;
 
@@ -132,14 +101,25 @@ export default function AboutDoctor() {
 
             <div className="relative overflow-hidden rounded-[1.9rem] border border-border/70 bg-background/90 p-3 shadow-[0_28px_80px_-50px_rgba(15,23,42,0.45)] sm:p-4">
               <div className="relative aspect-[5/5] overflow-hidden rounded-[1.45rem] bg-surface">
-                <Image
-                  src="/dummy/doctor.jpg"
-                  alt="Dr. Bachir Abiad"
-                  fill
-                  priority
-                  sizes="(max-width: 1024px) 100vw, 42vw"
-                  className="object-cover object-center"
-                />
+                {aboutImageSrc ? (
+                  <Image
+                    src={aboutImageSrc}
+                    alt={aboutSection?.title?.trim() || "Dr. Bachir Abiad"}
+                    fill
+                    priority
+                    sizes="(max-width: 1024px) 100vw, 42vw"
+                    className="object-cover object-center"
+                  />
+                ) : (
+                  <Image
+                    src="/dummy/doctor.jpg"
+                    alt="Dr. Bachir Abiad"
+                    fill
+                    priority
+                    sizes="(max-width: 1024px) 100vw, 42vw"
+                    className="object-cover object-center"
+                  />
+                )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/14 via-transparent to-transparent" />
               </div>
 

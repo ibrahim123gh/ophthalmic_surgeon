@@ -7,7 +7,7 @@ import {
   MapPin,
   MessageCircle,
 } from "lucide-react";
-import { useGetClinicSettingsQuery } from "@/lib/redux/api";
+import { useClinicSettings } from "@/lib/redux/useClinicSettings";
 
 const fallbackMapEmbed =
   "https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d101812.71501028587!2d35.85930967678838!3d34.316036604901356!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m2!1sen!2slb!4v1778605300048!5m2!1sen!2slb";
@@ -16,12 +16,10 @@ const fallbackLocation = "Clemenceau Medical Center (CMC), Beirut";
 const fallbackWhatsApp = "+961 81 778 142";
 
 export default function ClinicInfo() {
-  const { data: clinicSettings } = useGetClinicSettingsQuery();
-  const latestSettings = clinicSettings?.[0];
+  const { clinicSettings: latestSettings } = useClinicSettings();
 
   const location = latestSettings?.location || fallbackLocation;
   const whatsappNumber = latestSettings?.whatsappNumber || fallbackWhatsApp;
-  const phoneNumber = latestSettings?.phoneNumber || fallbackWhatsApp;
   const workingHourItems = Array.isArray(latestSettings?.workingHour)
     ? latestSettings.workingHour
     : typeof latestSettings?.workingHour === "string" && latestSettings.workingHour.trim().length > 0
@@ -35,7 +33,6 @@ export default function ClinicInfo() {
       : "Monday till Thursday";
   const mapUrl = latestSettings?.mapUrl || fallbackMapEmbed;
   const whatsappDigits = whatsappNumber.replace(/\D/g, "");
-  const phoneDigits = phoneNumber.replace(/\D/g, "");
 
   const contactItems = [
     {

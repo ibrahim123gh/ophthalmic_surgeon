@@ -1,22 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import type { MouseEvent } from "react";
 import Link from "next/link";
 import { LuArrowRight, LuCalendarDays, LuSparkles } from "react-icons/lu";
-
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5000/api/v1";
-
-type SettingsRecord = {
-  AppointmentsSurgicalCare?: {
-    title?: string;
-    description?: string;
-  };
-};
+import { useClinicSettings } from "@/lib/redux/useClinicSettings";
 
 export default function AppointmentsHero() {
-  const [sectionCopy, setSectionCopy] = useState<SettingsRecord["AppointmentsSurgicalCare"] | null>(null);
+  const { clinicSettings } = useClinicSettings();
+  const sectionCopy = clinicSettings?.AppointmentsSurgicalCare ?? null;
 
   const scrollToSection = (event: MouseEvent<HTMLAnchorElement>, id: string) => {
     event.preventDefault();
@@ -62,38 +53,6 @@ export default function AppointmentsHero() {
 
     window.requestAnimationFrame(animateScroll);
   };
-
-  useEffect(() => {
-    let ignore = false;
-
-    const loadSettings = async () => {
-      try {
-        const response = await fetch(`${API_BASE_URL}/settings`, {
-          cache: "no-store",
-        });
-
-        if (!response.ok) {
-          return;
-        }
-
-        const data = (await response.json()) as SettingsRecord[];
-
-        if (!ignore && Array.isArray(data) && data.length > 0) {
-          setSectionCopy(data[0].AppointmentsSurgicalCare ?? null);
-        }
-      } catch {
-        if (!ignore) {
-          setSectionCopy(null);
-        }
-      }
-    };
-
-    void loadSettings();
-
-    return () => {
-      ignore = true;
-    };
-  }, []);
 
   return (
     <section className="relative overflow-hidden py-24 sm:py-28">

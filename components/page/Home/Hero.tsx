@@ -6,7 +6,7 @@ import gsap from "gsap";
 import Image from "next/image";
 import Link from "next/link";
 import { LuArrowRight, LuClock3, LuShieldCheck, LuSparkles } from "react-icons/lu";
-import { useGetClinicSettingsQuery } from "@/lib/redux/api";
+import { useClinicSettings } from "@/lib/redux/useClinicSettings";
 
 type HeroSectionRecord = {
   _id: string;
@@ -282,8 +282,7 @@ export default function HeroSwiper() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [heroRecords, setHeroRecords] = useState<HeroSectionRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { data: clinicSettings } = useGetClinicSettingsQuery();
-  const latestSettings = clinicSettings?.[0];
+  const { clinicSettings: latestSettings } = useClinicSettings();
   const whatsappNumber = latestSettings?.whatsappNumber || "+961 81 778 142";
   const whatsappDigits = whatsappNumber.replace(/\D/g, "");
   const whatsappHref = `https://wa.me/${whatsappDigits}`;
@@ -459,7 +458,7 @@ export default function HeroSwiper() {
                       <div className="relative aspect-[4/5] overflow-hidden rounded-[1.35rem] bg-slate-100 sm:aspect-[5/6] sm:rounded-[1.6rem]">
                         {activeSlide.image ? (
                           <Image
-                            src={activeSlide.image}
+                            src={process.env.NEXT_PUBLIC_API_BASE_URL_IMAGE + activeSlide.image}
                             alt={activeSlide.alt}
                             fill
                             priority

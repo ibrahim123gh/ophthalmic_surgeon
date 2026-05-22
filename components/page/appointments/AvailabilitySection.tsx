@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { LuCalendarDays, LuMapPin, LuSparkles } from "react-icons/lu";
+import { useClinicSettings } from "@/lib/redux/useClinicSettings";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5000/api/v1";
@@ -24,13 +25,6 @@ type CityGroup = {
   accent: string;
 };
 
-type SettingsRecord = {
-  ClinicSchedule?: {
-    title?: string;
-    description?: string;
-  };
-};
-
 const groupAccents = [
   "from-primary via-sky-300 to-cyan-200",
   "from-sky-400 via-primary to-cyan-200",
@@ -41,35 +35,27 @@ export default function AvailabilitySection() {
   const sectionRef = useRef<HTMLElement>(null);
   const [isVisible, setIsVisible] = useState(false);
   const [scheduleEntries, setScheduleEntries] = useState<ClinicScheduleEntry[]>([]);
-  const [sectionCopy, setSectionCopy] = useState<SettingsRecord["ClinicSchedule"] | null>(null);
+  const { clinicSettings } = useClinicSettings();
+  const sectionCopy = clinicSettings?.ClinicSchedule ?? null;
 
   useEffect(() => {
     let ignore = false;
 
     const loadClinicSchedule = async () => {
       try {
-        const [scheduleResponse, settingsResponse] = await Promise.all([
-          fetch(`${API_BASE_URL}/clinic-schedule`, { cache: "no-store" }),
-          fetch(`${API_BASE_URL}/settings`, { cache: "no-store" }),
-        ]);
+        const response = await fetch(`${API_BASE_URL}/clinic-schedule`, {
+          cache: "no-store",
+        });
 
-        if (scheduleResponse.ok) {
-          const data = (await scheduleResponse.json()) as ClinicScheduleEntry[];
+        if (response.ok) {
+          const data = (await response.json()) as ClinicScheduleEntry[];
           if (!ignore) {
             setScheduleEntries(Array.isArray(data) ? data : []);
-          }
-        }
-
-        if (settingsResponse.ok) {
-          const settings = (await settingsResponse.json()) as SettingsRecord[];
-          if (!ignore && Array.isArray(settings) && settings.length > 0) {
-            setSectionCopy(settings[0].ClinicSchedule ?? null);
           }
         }
       } catch {
         if (!ignore) {
           setScheduleEntries([]);
-          setSectionCopy(null);
         }
       }
     };

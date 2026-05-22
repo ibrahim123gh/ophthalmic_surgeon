@@ -15,6 +15,7 @@ import {
   LuZap,
 } from "react-icons/lu";
 import { FiX } from "react-icons/fi";
+import { useClinicSettings } from "@/lib/redux/useClinicSettings";
 
 type ServiceRecord = {
   _id: string;
@@ -24,13 +25,6 @@ type ServiceRecord = {
   category?: string;
   icon: string;
   order?: number;
-};
-
-type SettingsRecord = {
-  ourServices?: {
-    title?: string;
-    description?: string;
-  };
 };
 
 const API_BASE_URL =
@@ -66,7 +60,8 @@ export default function ServicesSection() {
   const [loading, setLoading] = useState(true);
   const [activeService, setActiveService] = useState<ServiceRecord | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [sectionCopy, setSectionCopy] = useState<SettingsRecord["ourServices"] | null>(null);
+  const { clinicSettings } = useClinicSettings();
+  const sectionCopy = clinicSettings?.ourServices ?? null;
 
   useEffect(() => {
     const section = sectionRef.current;
@@ -96,28 +91,6 @@ export default function ServicesSection() {
   useEffect(() => {
     let ignore = false;
 
-    const loadSettings = async () => {
-      try {
-        const response = await fetch(`${API_BASE_URL}/settings`, {
-          cache: "no-store",
-        });
-
-        if (!response.ok) {
-          return;
-        }
-
-        const data = (await response.json()) as SettingsRecord[];
-
-        if (!ignore && Array.isArray(data) && data.length > 0) {
-          setSectionCopy(data[0].ourServices ?? null);
-        }
-      } catch {
-        if (!ignore) {
-          setSectionCopy(null);
-        }
-      }
-    };
-
     const loadServices = async () => {
       try {
         const response = await fetch(`${API_BASE_URL}/services`, {
@@ -144,7 +117,6 @@ export default function ServicesSection() {
       }
     };
 
-    void loadSettings();
     void loadServices();
 
     return () => {
@@ -153,16 +125,11 @@ export default function ServicesSection() {
   }, []);
 
   useEffect(() => {
-    if (activeService) {
-      const frame = window.requestAnimationFrame(() => {
-        setIsModalOpen(true);
-      });
+    const frame = window.requestAnimationFrame(() => {
+      setIsModalOpen(Boolean(activeService));
+    });
 
-      return () => window.cancelAnimationFrame(frame);
-    }
-
-    setIsModalOpen(false);
-    return undefined;
+    return () => window.cancelAnimationFrame(frame);
   }, [activeService]);
 
   useEffect(() => {

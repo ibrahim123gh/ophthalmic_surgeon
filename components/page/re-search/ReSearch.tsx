@@ -1,12 +1,7 @@
 "use client";
-
-import { useEffect, useState } from "react";
 import { LuCalendarDays, LuFileText } from "react-icons/lu";
-import ClinicSchedule from "@/components/page/Home/ClinicSchedule";
 import { useGetPublicationsQuery } from "@/lib/redux/api";
-
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5000/api/v1";
+import { useClinicSettings } from "@/lib/redux/useClinicSettings";
 
 type PublicationGroup = {
   year: string;
@@ -21,48 +16,10 @@ type PublicationGroup = {
   }>;
 };
 
-type SettingsRecord = {
-  research?: {
-    title?: string;
-    description?: string;
-  };
-};
-
 export default function ResearchPage() {
   const { data: publications = [], isLoading, isError } = useGetPublicationsQuery();
-  const [sectionCopy, setSectionCopy] = useState<SettingsRecord["research"] | null>(null);
-
-  useEffect(() => {
-    let ignore = false;
-
-    const loadSettings = async () => {
-      try {
-        const response = await fetch(`${API_BASE_URL}/settings`, {
-          cache: "no-store",
-        });
-
-        if (!response.ok) {
-          return;
-        }
-
-        const data = (await response.json()) as SettingsRecord[];
-
-        if (!ignore && Array.isArray(data) && data.length > 0) {
-          setSectionCopy(data[0].research ?? null);
-        }
-      } catch {
-        if (!ignore) {
-          setSectionCopy(null);
-        }
-      }
-    };
-
-    void loadSettings();
-
-    return () => {
-      ignore = true;
-    };
-  }, []);
+  const { clinicSettings } = useClinicSettings();
+  const sectionCopy = clinicSettings?.research ?? null;
 
   const sectionTitle =
     sectionCopy?.title?.trim() || "Publications and academic work.";

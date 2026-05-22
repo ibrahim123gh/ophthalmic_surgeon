@@ -1,52 +1,11 @@
 "use client";
-"use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { LuMail, LuMessageCircle } from "react-icons/lu";
-
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5000/api/v1";
-
-type SettingsRecord = {
-  whatsappNumber?: string;
-  email?: string;
-};
+import { useClinicSettings } from "@/lib/redux/useClinicSettings";
 
 export default function BookingCTA() {
-  const [contact, setContact] = useState<SettingsRecord | null>(null);
-
-  useEffect(() => {
-    let ignore = false;
-
-    const loadSettings = async () => {
-      try {
-        const response = await fetch(`${API_BASE_URL}/settings`, {
-          cache: "no-store",
-        });
-
-        if (!response.ok) {
-          return;
-        }
-
-        const data = (await response.json()) as SettingsRecord[];
-
-        if (!ignore && Array.isArray(data) && data.length > 0) {
-          setContact(data[0] ?? null);
-        }
-      } catch {
-        if (!ignore) {
-          setContact(null);
-        }
-      }
-    };
-
-    void loadSettings();
-
-    return () => {
-      ignore = true;
-    };
-  }, []);
+  const { clinicSettings: contact } = useClinicSettings();
 
   const whatsappNumber = contact?.whatsappNumber || "+961 81 778 142";
   const email = contact?.email || "info@drbachir.com";

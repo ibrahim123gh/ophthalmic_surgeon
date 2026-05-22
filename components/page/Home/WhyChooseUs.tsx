@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 
 import Image from "next/image";
 import { Sparkles } from "lucide-react";
+import { useClinicSettings } from "@/lib/redux/useClinicSettings";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5000/api/v1";
@@ -42,43 +43,15 @@ const fallbackItems: WhyChooseUsDisplayItem[] = [
   },
 ];
 
-type SettingsRecord = {
-  WhyChooseUs?: {
-    title?: string;
-    description?: string;
-  };
-};
-
 export default function WhyChooseUs() {
   const sectionRef = useRef<HTMLElement>(null);
   const [isVisible, setIsVisible] = useState(false);
-  const [sectionCopy, setSectionCopy] = useState<SettingsRecord["WhyChooseUs"] | null>(null);
   const [items, setItems] = useState<WhyChooseUsDisplayItem[]>(fallbackItems);
+  const { clinicSettings } = useClinicSettings();
+  const sectionCopy = clinicSettings?.WhyChooseUs ?? null;
 
   useEffect(() => {
     let ignore = false;
-
-    const loadSettings = async () => {
-      try {
-        const response = await fetch(`${API_BASE_URL}/settings`, {
-          cache: "no-store",
-        });
-
-        if (!response.ok) {
-          return;
-        }
-
-        const data = (await response.json()) as SettingsRecord[];
-
-        if (!ignore && Array.isArray(data) && data.length > 0) {
-          setSectionCopy(data[0].WhyChooseUs ?? null);
-        }
-      } catch {
-        if (!ignore) {
-          setSectionCopy(null);
-        }
-      }
-    };
 
     const loadItems = async () => {
       try {
@@ -114,7 +87,6 @@ export default function WhyChooseUs() {
       }
     };
 
-    void loadSettings();
     void loadItems();
 
     return () => {
@@ -198,7 +170,7 @@ export default function WhyChooseUs() {
             >
               <div className="relative aspect-[4/3] overflow-hidden">
                 <Image
-                  src={item.image}
+                  src={process.env.NEXT_PUBLIC_API_BASE_URL_IMAGE + item.image}
                   alt={item.title}
                   fill
                   sizes="(max-width: 768px) 100vw, 33vw"
