@@ -18,7 +18,7 @@ function resolveAboutImageUrl(image?: string | null) {
     return image;
   }
 
-  const assetsBase = process.env.NEXT_PUBLIC_API_BASE_URL_IMAGE?.replace(/\/$/, "");
+  const assetsBase = process.env.NEXT_PUBLIC_API_BASE_URL_IMAGE?.replace(/\/$/, "") || "https://api.drbachirabiad.com";
   const normalizedPath = image.startsWith("/") ? image : `/${image}`;
 
   return assetsBase ? `${assetsBase}${normalizedPath}` : normalizedPath;
@@ -76,6 +76,7 @@ export default function AboutDoctor() {
     aboutSection?.profileHiglight?.trim() ||
     "Trusted surgical care with calm, precise follow-up.";
   const aboutImageSrc = resolveAboutImageUrl(aboutSection?.image?.trim());
+  console.log(aboutImageSrc)
   const whatsappDigits = whatsappNumber.replace(/\D/g, "");
   const whatsappHref = `https://wa.me/${whatsappDigits}`;
 

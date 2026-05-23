@@ -5,7 +5,12 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import gsap from "gsap";
 import Image from "next/image";
 import Link from "next/link";
-import { LuArrowRight, LuClock3, LuShieldCheck, LuSparkles } from "react-icons/lu";
+import {
+  LuArrowRight,
+  LuClock3,
+  LuShieldCheck,
+  LuSparkles,
+} from "react-icons/lu";
 import { useClinicSettings } from "@/lib/redux/useClinicSettings";
 
 type HeroSectionRecord = {
@@ -21,7 +26,9 @@ type HeroSectionRecord = {
   floatingCards?: Array<{ title?: string; subtitle?: string }>;
 };
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "https://api.drbachirabiad.com/api/v1";
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL ??
+  "https://api.drbachirabiad.com/api/v1";
 
 function resolveImageUrl(image?: string | null) {
   if (!image) {
@@ -32,7 +39,9 @@ function resolveImageUrl(image?: string | null) {
     return image;
   }
 
-  const assetsBase = process.env.NEXT_PUBLIC_ASSETS_URL?.replace(/\/$/, "");
+  const assetsBase =
+    process.env.NEXT_PUBLIC_API_BASE_URL_IMAGE?.replace(/\/$/, "") ||
+    "https://api.drbachirabiad.com";
   const normalizedPath = image.startsWith("/") ? image : `/${image}`;
 
   return assetsBase ? `${assetsBase}${normalizedPath}` : normalizedPath;
@@ -72,7 +81,10 @@ function AnimatedPhrase({
   exitDuration?: number;
 }) {
   const words = text.trim().split(/\s+/).filter(Boolean);
-  const totalLetters = words.reduce((count, word) => count + Array.from(word).length, 0);
+  const totalLetters = words.reduce(
+    (count, word) => count + Array.from(word).length,
+    0,
+  );
   let letterIndex = 0;
 
   return (
@@ -80,7 +92,10 @@ function AnimatedPhrase({
       <span className="sr-only">{text}</span>
       <span aria-hidden="true" className="inline-flex flex-wrap">
         {words.map((word, wordIndex) => (
-          <span key={`${word}-${wordIndex}`} className="inline-flex whitespace-nowrap">
+          <span
+            key={`${word}-${wordIndex}`}
+            className="inline-flex whitespace-nowrap"
+          >
             {Array.from(word).map((char) => {
               const currentIndex = letterIndex++;
               const delay = active
@@ -101,7 +116,9 @@ function AnimatedPhrase({
               );
             })}
 
-            {wordIndex < words.length - 1 ? <span aria-hidden="true" className="inline-block w-[0.24em]" /> : null}
+            {wordIndex < words.length - 1 ? (
+              <span aria-hidden="true" className="inline-block w-[0.24em]" />
+            ) : null}
           </span>
         ))}
       </span>
@@ -192,9 +209,14 @@ function GsapTitle({ text, active }: { text: string; active: boolean }) {
       <span aria-hidden="true" className="invisible block text-balance">
         {text}
       </span>
-      <span aria-hidden="true" className="absolute inset-0 overflow-hidden text-balance">
+      <span
+        aria-hidden="true"
+        className="absolute inset-0 overflow-hidden text-balance"
+      >
         <span data-title-text className="hero-typewriter-text" />
-        <span className={`hero-caret ${active ? "hero-caret-active" : "hero-caret-hidden"}`} />
+        <span
+          className={`hero-caret ${active ? "hero-caret-active" : "hero-caret-hidden"}`}
+        />
       </span>
     </span>
   );
@@ -340,9 +362,10 @@ export default function HeroSwiper() {
     return () => window.clearInterval(interval);
   }, [slides.length]);
 
-  const displayActiveIndex = slides.length > 0 ? activeIndex % slides.length : 0;
+  const displayActiveIndex =
+    slides.length > 0 ? activeIndex % slides.length : 0;
   const activeSlide = slides[displayActiveIndex] ?? null;
-
+console.log(activeSlide);
   return (
     <section className="hero-shell hero-carousel relative overflow-hidden">
       <div className="absolute inset-0">
@@ -357,7 +380,9 @@ export default function HeroSwiper() {
             <LoadingSkeleton />
           ) : !activeSlide ? (
             <div className="grid min-h-[60vh] place-items-center text-center">
-              <p className="text-sm font-medium text-foreground/60">No hero content available yet.</p>
+              <p className="text-sm font-medium text-foreground/60">
+                No hero content available yet.
+              </p>
             </div>
           ) : (
             <>
@@ -412,8 +437,16 @@ export default function HeroSwiper() {
                     {activeSlide.learnMoreHref ? (
                       <Link
                         href={activeSlide.learnMoreHref}
-                        target={/^https?:\/\//i.test(activeSlide.learnMoreHref) ? "_blank" : undefined}
-                        rel={/^https?:\/\//i.test(activeSlide.learnMoreHref) ? "noreferrer" : undefined}
+                        target={
+                          /^https?:\/\//i.test(activeSlide.learnMoreHref)
+                            ? "_blank"
+                            : undefined
+                        }
+                        rel={
+                          /^https?:\/\//i.test(activeSlide.learnMoreHref)
+                            ? "noreferrer"
+                            : undefined
+                        }
                         className="hero-action-link inline-flex items-center justify-center gap-2 rounded-full border border-border bg-background/70 px-6 py-3.5 text-sm font-semibold text-foreground/80 shadow-sm transition hover:-translate-y-0.5 hover:border-primary/40 hover:text-primary"
                       >
                         Online Consultation
@@ -458,7 +491,7 @@ export default function HeroSwiper() {
                       <div className="relative aspect-[4/5] overflow-hidden rounded-[1.35rem] bg-slate-100 sm:aspect-[5/6] sm:rounded-[1.6rem]">
                         {activeSlide.image ? (
                           <Image
-                            src={process.env.NEXT_PUBLIC_API_BASE_URL_IMAGE + activeSlide.image}
+                            src={activeSlide.image}
                             alt={activeSlide.alt}
                             fill
                             priority
@@ -490,10 +523,12 @@ export default function HeroSwiper() {
                           </div>
                           <div>
                             <p className="text-sm font-semibold text-foreground">
-                              {activeSlide.floatingCards[0].title || "Specialized Care"}
+                              {activeSlide.floatingCards[0].title ||
+                                "Specialized Care"}
                             </p>
                             <p className="text-xs text-foreground/60">
-                              {activeSlide.floatingCards[0].subtitle || activeSlide.text}
+                              {activeSlide.floatingCards[0].subtitle ||
+                                activeSlide.text}
                             </p>
                           </div>
                         </div>
@@ -512,7 +547,8 @@ export default function HeroSwiper() {
                           </div>
                           <div>
                             <p className="text-sm font-semibold text-foreground">
-                              {activeSlide.floatingCards[1].title || "International Expertise"}
+                              {activeSlide.floatingCards[1].title ||
+                                "International Expertise"}
                             </p>
                             <p className="text-xs text-foreground/60">
                               {activeSlide.floatingCards[1].subtitle || ""}
@@ -535,7 +571,9 @@ export default function HeroSwiper() {
                       aria-pressed={index === displayActiveIndex}
                       onClick={() => setActiveIndex(index)}
                       className={`h-2.5 rounded-full transition-all duration-300 ${
-                        index === displayActiveIndex ? "w-8 bg-primary" : "w-2.5 bg-primary/25 hover:bg-primary/45"
+                        index === displayActiveIndex
+                          ? "w-8 bg-primary"
+                          : "w-2.5 bg-primary/25 hover:bg-primary/45"
                       }`}
                     />
                   ))}

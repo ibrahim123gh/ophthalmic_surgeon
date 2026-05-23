@@ -193,7 +193,7 @@ body {
 
 .hero-carousel .hero-image {
   opacity: 1;
-  transform: scale(0);
+  transform: scale(1);
   transform-origin: center;
   will-change: transform, filter;
 }
