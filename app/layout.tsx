@@ -15,6 +15,41 @@ const playfairDisplay = Playfair_Display({
   variable: "--font-playfair-display",
 });
 
+const siteUrl = getSiteUrl();
+
+const structuredData = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": `${siteUrl}/#website`,
+      url: siteUrl,
+      name: "Dr. Bachir Abiad",
+      description: "Dr. Bachir Abiad ophthalmology clinic website.",
+      inLanguage: "en",
+      publisher: {
+        "@id": `${siteUrl}/#physician`,
+      },
+    },
+    {
+      "@type": "Physician",
+      "@id": `${siteUrl}/#physician`,
+      name: "Dr. Bachir Abiad",
+      url: siteUrl,
+      description: "Specialized ophthalmology care led by Dr. Bachir Abiad.",
+      medicalSpecialty: "Ophthalmology",
+      telephone: "+96181778142",
+      email: "info@drbachirabiad.com",
+      areaServed: "Lebanon",
+      worksFor: {
+        "@type": "MedicalClinic",
+        name: "Dr. Bachir Abiad Ophthalmology Clinic",
+        url: siteUrl,
+      },
+    },
+  ],
+};
+
 export async function generateMetadata(): Promise<Metadata> {
   const seo = await getSeoBySlug("home");
 
@@ -39,6 +74,14 @@ export default function RootLayout({
       suppressHydrationWarning
       className={`${playfairDisplay.variable} h-full antialiased`}
     >
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(structuredData),
+          }}
+        />
+      </head>
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <script
           dangerouslySetInnerHTML={{
