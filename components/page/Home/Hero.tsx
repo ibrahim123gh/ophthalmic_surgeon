@@ -351,8 +351,8 @@ export default function HeroSwiper() {
         <div className="hero-orb hero-orb-three absolute bottom-[-7rem] left-1/3 h-64 w-64 rounded-full bg-white/50 blur-3xl" />
       </div>
 
-      <div className="relative mx-auto max-w-[1600px] px-4 pt-6 sm:px-6 sm:py-10 lg:min-h-[calc(90svh-90px)] lg:px-8 xl:px-10">
-        <div className="relative lg:min-h-[calc(90svh-110px)]">
+      <div className="relative mx-auto max-w-[1600px] px-4 pt-6 pb-10 sm:px-6 sm:py-10 lg:min-h-[calc(100svh-90px)] lg:px-8 lg:pb-14 xl:px-10">
+        <div className="relative lg:flex lg:min-h-[calc(100svh-110px)] lg:flex-col">
           {isLoading ? (
             <LoadingSkeleton />
           ) : !activeSlide ? (
@@ -361,8 +361,8 @@ export default function HeroSwiper() {
             </div>
           ) : (
             <>
-              <article className="hero-carousel-slide hero-carousel-slide-active grid items-start gap-6 transition-all duration-700 ease-out sm:gap-8 lg:absolute lg:inset-0 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:gap-10">
-                <div className="hero-copy-shell relative z-10 max-w-2xl">
+              <article className="hero-carousel-slide hero-carousel-slide-active grid items-start gap-6 transition-all duration-700 ease-out sm:gap-8 lg:flex-1 lg:grid-cols-[1.2fr_0.8fr] lg:items-center lg:gap-8 xl:grid-cols-[1.12fr_0.88fr]">
+                <div className="hero-copy-shell relative z-10 max-w-[46rem]">
                   <div
                     data-hero-reveal
                     data-hero-step="0"
@@ -382,7 +382,7 @@ export default function HeroSwiper() {
                   <h1
                     data-hero-reveal
                     data-hero-step="1"
-                    className="hero-fade mt-5 max-w-2xl text-balance text-4xl font-semibold leading-[1.12] tracking-[-0.03em] text-foreground sm:text-5xl lg:leading-[1.08] xl:text-[3.65rem] xl:leading-[1.08]"
+                    className="hero-fade mt-4 max-w-[12ch] text-balance text-4xl font-semibold leading-[1.1] tracking-[-0.03em] text-foreground sm:text-5xl lg:max-w-[15ch] lg:text-[2.55rem] lg:leading-[1.02] xl:max-w-[16ch] xl:text-[3.15rem] xl:leading-[1.04]"
                   >
                     <GsapTitle text={activeSlide.title} active />
                   </h1>
@@ -390,7 +390,7 @@ export default function HeroSwiper() {
                   <p
                     data-hero-reveal
                     data-hero-step="2"
-                    className="hero-fade mt-6 max-w-xl text-base leading-8 text-foreground/70 sm:text-lg"
+                    className="hero-fade mt-4 max-w-xl text-sm leading-7 text-foreground/70 sm:text-base sm:leading-8"
                   >
                     {activeSlide.text}
                   </p>
@@ -398,7 +398,7 @@ export default function HeroSwiper() {
                   <div
                     data-hero-reveal
                     data-hero-step="3"
-                    className="hero-fade hero-actions mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center"
+                    className="hero-fade hero-actions mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center"
                   >
                     <Link
                       href={whatsappHref}
@@ -426,17 +426,17 @@ export default function HeroSwiper() {
                     <div
                       data-hero-reveal
                       data-hero-step="4"
-                      className="hero-fade hero-stats mt-10 grid gap-3 sm:grid-cols-3"
+                      className="hero-fade hero-stats mt-8 grid gap-3 sm:grid-cols-3"
                     >
                       {activeSlide.stats.map((stat, index) => (
                         <div
                           key={`${activeSlide.title}-stat-${index}`}
-                          className="hero-stat-card rounded-2xl border border-border/70 bg-background/70 p-4 shadow-sm backdrop-blur"
+                          className="hero-stat-card rounded-2xl border border-border/70 bg-background/70 p-3 shadow-sm backdrop-blur lg:p-4"
                         >
-                          <p className="text-2xl font-semibold tracking-[-0.04em] text-foreground">
+                          <p className="text-xl font-semibold tracking-[-0.04em] text-foreground lg:text-2xl">
                             {stat.value || "-"}
                           </p>
-                          <p className="mt-1 text-xs font-medium uppercase tracking-[0.22em] text-foreground/55">
+                          <p className="mt-1 text-[11px] font-medium uppercase tracking-[0.2em] text-foreground/55 lg:text-xs lg:tracking-[0.22em]">
                             {stat.label || "-"}
                           </p>
                         </div>
@@ -526,7 +526,7 @@ export default function HeroSwiper() {
               </article>
 
               {slides.length > 1 ? (
-                <div className="hero-dots relative z-20 mt-6 mx-auto flex w-fit items-center gap-2 rounded-full border border-border/70 bg-background/75 px-3 py-2 shadow-sm backdrop-blur lg:absolute lg:left-1/2 lg:bottom-0 lg:mt-0 lg:-translate-x-1/2">
+                <div className="hero-dots relative z-20 mt-6 mx-auto flex w-fit items-center gap-2 rounded-full border border-border/70 bg-background/75 px-3 py-2 shadow-sm backdrop-blur lg:mt-8 lg:self-center">
                   {slides.map((slide, index) => (
                     <button
                       key={slide.title}
