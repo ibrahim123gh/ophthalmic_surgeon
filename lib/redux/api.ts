@@ -25,6 +25,7 @@ export type Publication = {
   journal: string;
   meta?: string;
   doi?: string;
+  link?: string;
   createdAt?: string;
   updatedAt?: string;
 };

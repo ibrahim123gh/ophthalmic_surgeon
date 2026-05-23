@@ -1,20 +1,21 @@
 "use client";
-import { LuCalendarDays, LuFileText } from "react-icons/lu";
+import { LuCalendarDays, LuFileText, LuLink } from "react-icons/lu";
 import { useGetPublicationsQuery } from "@/lib/redux/api";
 import { useClinicSettings } from "@/lib/redux/useClinicSettings";
 
 type PublicationGroup = {
-  year: string;
-  items: Array<{
-    _id: string;
     year: string;
-    date: string;
-    title: string;
-    journal: string;
-    meta?: string;
-    doi?: string;
-  }>;
-};
+    items: Array<{
+      _id: string;
+      year: string;
+      date: string;
+      title: string;
+      journal: string;
+      meta?: string;
+      doi?: string;
+      link?: string;
+    }>;
+  };
 
 export default function ResearchPage() {
   const { data: publications = [], isLoading, isError } = useGetPublicationsQuery();
@@ -142,9 +143,21 @@ export default function ResearchPage() {
                         </div>
                       </div>
 
-                      <div className="grid size-10 place-items-center rounded-full bg-primary/10 text-primary md:justify-self-end">
-                        <LuFileText size={17} />
-                      </div>
+                      {publication.link ? (
+                        <a
+                          href={publication.link}
+                          target="_blank"
+                          rel="noreferrer"
+                          aria-label={`Open publication link for ${publication.title}`}
+                          className="grid size-10 place-items-center rounded-full bg-primary/10 text-primary transition hover:bg-primary/15 hover:text-primary/90 md:justify-self-end"
+                        >
+                          <LuFileText size={17} />
+                        </a>
+                      ) : (
+                        <div className="grid size-10 place-items-center rounded-full bg-primary/10 text-primary md:justify-self-end">
+                          <LuFileText size={17} />
+                        </div>
+                      )}
                     </article>
                   ))}
                 </div>
