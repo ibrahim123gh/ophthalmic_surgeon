@@ -11,13 +11,13 @@ export type SeoRecord = {
 };
 
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5000/api/v1";
+  process.env.NEXT_PUBLIC_API_BASE_URL ?? "https://api.drbachirabiad.com/api/v1";
 
 function getOrigin() {
   try {
     return new URL(API_BASE_URL).origin;
   } catch {
-    return "http://localhost:5000";
+    return "https://api.drbachirabiad.com";
   }
 }
 
