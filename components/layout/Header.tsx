@@ -17,9 +17,9 @@ const poppins = Poppins({
 });
 
 const navLinks = [
-  { label: "HOME", href: "/" },
   { label: "LASIK", href: "/lasik-beirut" },
   { label: "CATARACT", href: "/cataract-surgery-beirut" },
+  { label: "SURGERIES", href: "/surgeries" },
   { label: "CORNEAL TRANSPLANT", href: "/corneal-transplant-lebanon" },
 ];
 
