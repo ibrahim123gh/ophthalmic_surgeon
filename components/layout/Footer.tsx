@@ -7,10 +7,11 @@ import { FaFacebookF, FaInstagram, FaYoutube } from "react-icons/fa6";
 import { useClinicSettings } from "@/lib/redux/useClinicSettings";
 
 const quickLinks = [
-  { label: "Home", href: "/" },
-  { label: "LASIK", href: "/lasik-beirut" },
-  { label: "Cataract", href: "/cataract-surgery-beirut" },
-  { label: "Corneal Transplant", href: "/corneal-transplant-lebanon" },
+  { label: "About us ", href: "/" },
+  { label: "Videos ", href: "/lasik-beirut" },
+  { label: "Re-Search ", href: "/cataract-surgery-beirut" },
+  { label: "Availability & appointment", href: "/surgeries" },
+  { label: "CORNEAL TRANSPLANT", href: "/corneal-transplant-lebanon" },
 ];
 
 export default function Footer() {
